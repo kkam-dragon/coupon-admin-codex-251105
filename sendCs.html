@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C/S</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header will be injected here -->
+    <div id="header-placeholder"></div>
+
+    <div class="container-fluid mb-5 px-4">
+        <h2 class="mb-4">C/S</h2>
+        
+        <!-- 조회 조건 -->
+        <div class="card mb-4">
+            <div class="card-title d-flex justify-content-between align-items-center">
+                <span>조회 조건</span>
+                <button type="button" class="btn btn-primary" id="searchBtn">조회</button>
+            </div>
+            <div class="row g-3 align-items-center justify-content-end">
+                <div class="col-md-auto"><label for="queryCouponNumber" class="form-label mb-0">쿠폰번호</label></div>
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <input type="text" id="queryCouponNumber" class="form-control" placeholder="쿠폰번호를 입력하세요" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+                        <button class="btn btn-outline-secondary clear-input-btn" type="button" style="display: none;"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
+                <div class="col-md-auto"><label for="queryPhoneNumber" class="form-label mb-0">휴대폰 번호</label></div>
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <input type="text" id="queryPhoneNumber" class="form-control" placeholder="휴대폰 번호를 입력하세요" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+                        <button class="btn btn-outline-secondary clear-input-btn" type="button" style="display: none;"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 조회 결과 -->
+        <div class="card">
+            <div class="card-title d-flex justify-content-between align-items-center">
+                <span id="totalResults">조회 결과</span>
+                <div class="d-flex align-items-center">
+                    <div class="input-group input-group-sm me-3" style="width: 200px;">
+                        <input type="text" id="tableSearchInput" class="form-control" placeholder="표 내부 검색...">
+                        <button class="btn btn-outline-secondary clear-input-btn" type="button" style="display: none;"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover text-center">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="col-no">No</th>
+                            <th class="col-cs-datetime" data-sortable data-sort-key="dispatchDate">발송일시 <i class="sort-icon fas fa-sort"></i></th>
+                            <th class="col-cs-client" data-sortable data-sort-key="client">고객사 <i class="sort-icon fas fa-sort"></i></th>
+                            <th data-sortable data-sort-key="event">이벤트명 <i class="sort-icon fas fa-sort"></i></th>
+                            <th data-sortable data-sort-key="productName">상품명 <i class="sort-icon fas fa-sort"></i></th>
+                            <th class="col-cs-price">정상단가</th>
+                            <th class="col-cs-expiry" data-sortable data-sort-key="expiryDate">유효기간 <i class="sort-icon fas fa-sort"></i></th>
+                            <th class="col-cs-status" data-sortable data-sort-key="couponStatus">쿠폰상태 <i class="sort-icon fas fa-sort"></i></th>
+                            <th class="col-cs-phone">휴대폰번호</th>
+                            <th class="col-cs-coupon">쿠폰번호</th>
+                            <th class="col-cs-action" style="width: 290px; min-width: 290px;">CS 처리</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsTableBody">
+                        <tr>
+                            <td colspan="11">조회된 결과가 없습니다.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <!-- Loading Spinner -->
+            <div id="loadingSpinner" class="text-center my-3 d-none">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CS Action Confirmation Modal -->
+    <div class="modal fade" id="csActionModal" tabindex="-1" aria-labelledby="csActionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="csActionModalLabel"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <p class="h5" id="csActionModalBody"></p>
+                    <div class="mt-3 px-3">
+                        <label for="csActionNotes" class="form-label text-start w-100">상담 메모 (선택)</label>
+                        <textarea class="form-control" id="csActionNotes" rows="3" placeholder="필요 시 상담 내용을 기록하세요."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="button" class="btn btn-primary" id="csActionConfirmBtn">확인</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generic Alert Modal -->
+    <div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="alertModalLabel">알림</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="alertModalBody"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">확인</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Phone Number Modal -->
+    <div class="modal fade" id="changePhoneModal" tabindex="-1" aria-labelledby="changePhoneModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="changePhoneModalLabel">휴대폰 번호 변경</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">현재 휴대폰 번호</label>
+                        <input type="text" class="form-control" id="currentPhoneNumber" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newPhoneNumber" class="form-label">변경할 휴대폰 번호</label>
+                        <input type="text" id="newPhoneNumber" class="form-control" placeholder="숫자만 입력하세요 (최대 11자리)" maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+                    </div>
+                    <div class="mb-2">
+                        <label for="changePhoneNotes" class="form-label">상담 메모 (선택)</label>
+                        <textarea class="form-control" id="changePhoneNotes" rows="3" placeholder="필요 시 상담 내용을 기록하세요."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="button" class="btn btn-primary" id="changePhoneConfirmBtn">변경</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Alert Modal -->
+    <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content border-0" style="background-color: rgba(0,0,0,0.7);">
+                 <div class="modal-body text-center py-4 text-white">
+                    <i class="fas fa-check-circle fa-3x mb-3"></i>
+                    <p class="h5" id="successModalBody"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Etc CS Modal -->
+    <div class="modal fade" id="etcCsModal" tabindex="-1" aria-labelledby="etcCsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="etcCsModalLabel">기타 CS 등록</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="etcCsNotes" class="form-label">상담 내용</label>
+                        <textarea class="form-control" id="etcCsNotes" rows="5" placeholder="상담 내용을 입력하세요."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="button" class="btn btn-primary" id="etcCsSaveBtn">저장</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function logout() {
+            if (confirm('로그아웃 하시겠습니까?')) { window.location.href = 'index.html'; }
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            // 헤더 로드
+            // 페이지 로드 시 페이드인 효과 적용
+            document.body.classList.add('loaded');
+            
+            fetch('partials/header.html')
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('header-placeholder').innerHTML = data;
+                    document.getElementById('logoutBtn').addEventListener('click', logout);
+                    document.getElementById('nav-sendCs').classList.add('active');
+                });
+
+            // C/S 화면용 샘플 데이터
+            let allCsData = Array.from({ length: 50 }, (_, i) => {
+                const statusOptions = ['교환', '미교환', '폐기']; // '폐기' 상태 추가, '교환완료' -> '교환'
+                const clientOptions = ['A고객사', 'B고객사', 'C고객사'];
+                const eventOptions = ['신규가입 이벤트', '가정의달 이벤트', '출석체크 이벤트'];
+                const productOptions = ['스타벅스 아메리카노', 'BBQ 황금올리브치킨', 'GS25 5천원권'];
+                const date = new Date(2024, 5, 5 - i);
+
+                return {
+                    no: i + 1,
+                    dispatchDate: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} 10:00`,
+                    client: clientOptions[i % clientOptions.length],
+                    event: eventOptions[i % eventOptions.length],
+                    productName: productOptions[i % productOptions.length],
+                    unitPrice: (i % 3 + 1) * 5000,
+                    // 3개 중 1개는 만료되도록 수정
+                    expiryDate: i % 3 === 0 
+                        ? new Date(new Date().setMonth(new Date().getMonth() - 2)).toISOString().split('T')[0] 
+                        : new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
+                    couponStatus: statusOptions[i % statusOptions.length], // 필드명 및 값 변경
+                    recipientPhone: `010-${String(1000 + i).padStart(4, '0')}-${String(5000 + i).padStart(4, '0')}`,
+                    couponNumber: (BigInt("910116698170") + BigInt(i)).toString(),
+                };
+            });
+
+            // '01096960524'로 조회될 20개의 추가 데이터 생성
+            const specialData = Array.from({ length: 20 }, (_, i) => {
+                const date = new Date(2024, 4, 20 - i); // 5월 20일부터 하루씩 이전 날짜
+                return {
+                    no: 51 + i,
+                    dispatchDate: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} 11:00`,
+                    client: '제이엠비즈콘_스페셜이벤트_고객사하나둘', // 20자
+                    event: 'Congratulations 이벤트',
+                    productName: '[스타벅스]부드러운 디저트(ICE)(아이스 카페 아메리카노 2잔+부드러운 생크림 카스텔라)',
+                    unitPrice: 13500,
+                    expiryDate: '2025-12-24',
+                    couponStatus: i % 2 === 0 ? '교환' : '미교환',
+                    recipientPhone: '010-9696-0524',
+                    couponNumber: (BigInt("910116698170") + BigInt(i)).toString(),
+                };
+            });
+            allCsData = allCsData.concat(specialData);
+
+            // '01096960524'로 조회될 만료된 데이터 10개 추가
+            const expiredData = Array.from({ length: 10 }, (_, i) => {
+                const date = new Date(2024, 3, 15 - i); // 4월 15일부터 하루씩 이전 날짜
+                return {
+                    no: 71 + i,
+                    dispatchDate: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} 14:00`,
+                    client: '제이엠비즈콘_스페셜이벤트_고객사하나둘', // 20자
+                    event: 'Past Congratulations 이벤트',
+                    productName: '[스타벅스]아이스 카페 아메리카노 T',
+                    unitPrice: 4500,
+                    expiryDate: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0], // 한 달 전 날짜로 만료시킴
+                    couponStatus: '미교환',
+                    recipientPhone: '010-9696-0524',
+                    couponNumber: (BigInt("910116700000") + BigInt(i)).toString(), // 다른 쿠폰 번호 대역
+                };
+            });
+            allCsData = allCsData.concat(expiredData);
+
+            // '폐기' 상태 테스트를 위한 3개의 샘플 데이터 추가
+            const discardedData = Array.from({ length: 3 }, (_, i) => {
+                const date = new Date(2024, 0, 15 - i); // 1월 15일부터 하루씩 이전 날짜
+                return {
+                    no: 81 + i,
+                    dispatchDate: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} 15:00`,
+                    client: '폐기 테스트 고객사',
+                    event: '폐기 처리된 이벤트',
+                    productName: '[테스트] 폐기된 상품',
+                    unitPrice: 1000,
+                    expiryDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0], // 유효기간은 남음
+                    couponStatus: '폐기', // 쿠폰 상태를 '폐기'로 설정
+                    recipientPhone: `010-0000-000${i + 1}`,
+                    couponNumber: (BigInt("888800000000") + BigInt(i)).toString(),
+                };
+            });
+            allCsData = allCsData.concat(discardedData);
+
+            // '010-9696-0524' 번호로 조회되는 '폐기' 상태 데이터 추가
+            const specialDiscardedData = Array.from({ length: 5 }, (_, i) => {
+                const date = new Date(2024, 2, 10 - i); // 3월 10일부터 하루씩 이전 날짜
+                return {
+                    no: 84 + i,
+                    dispatchDate: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} 16:00`,
+                    client: '제이엠비즈콘_스페셜이벤트_고객사하나둘',
+                    event: '폐기된 Congratulations 이벤트',
+                    productName: '[테스트] 폐기된 스타벅스 상품',
+                    unitPrice: 5000,
+                    expiryDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0], // 유효기간은 남음
+                    couponStatus: '폐기', // 쿠폰 상태를 '폐기'로 설정
+                    recipientPhone: '010-9696-0524',
+                    couponNumber: (BigInt("999900000000") + BigInt(i)).toString(),
+                };
+            });
+            allCsData = allCsData.concat(specialDiscardedData);
+
+            // CS 히스토리 테스트를 위한 데이터 수정
+            if (allCsData.length > 0) {
+                allCsData[0].history = [
+                    { type: '재발송', date: '2024-06-10 11:00', memo: '고객 요청으로 재발송 처리' },
+                    { type: '기타', date: '2024-06-09 14:30', memo: '단순 문의' }
+                ];
+                allCsData[2].history = [
+                    { type: '번호변경', date: '2024-06-08 10:20', memo: '010-1111-2222로 변경' }
+                ];
+                // 폐기된 데이터에도 히스토리 추가
+                const discardedItem = allCsData.find(item => item.couponStatus === '폐기');
+                if (discardedItem) {
+                    discardedItem.history = [{ type: '쿠폰폐기', date: '2024-06-01 18:00', memo: '사용자 요청으로 폐기 처리' }];
+                }
+
+                // '010-9696-0524'로 조회되는 데이터에 CS 히스토리 추가
+                const specialDataItems = allCsData.filter(item => item.recipientPhone === '010-9696-0524');
+                if (specialDataItems.length > 2) {
+                    specialDataItems[0].history = [
+                        { type: '재발송', date: '2024-05-21 09:30', memo: '문자 수신 못했다는 고객 문의' }
+                    ];
+                    specialDataItems[1].history = [
+                        { type: '번호변경', date: '2024-05-20 15:00', memo: '번호 변경 요청 (010-9696-0524 -> 010-xxxx-xxxx)' },
+                        { type: '재발송', date: '2024-05-20 15:01', memo: '변경된 번호로 재발송' }
+                    ];
+                }
+            }
+
+
+            const searchBtn = document.getElementById('searchBtn');
+            const tableBody = document.getElementById('resultsTableBody');
+            const totalResultsEl = document.getElementById('totalResults');
+            const queryCouponNumberEl = document.getElementById('queryCouponNumber');
+            const queryPhoneNumberEl = document.getElementById('queryPhoneNumber');
+            const tableSearchInput = document.getElementById('tableSearchInput');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const tableHeader = document.querySelector('#resultsTableBody').previousElementSibling;
+
+            let currentResults = [];
+            let displayedResults = [];
+            let sortState = { key: 'dispatchDate', direction: 'desc' };
+            const ROWS_PER_LOAD = 10;
+            let isLoading = false;
+
+            const renderTable = (data, append = false) => {
+                if (!append) tableBody.innerHTML = '';
+
+                if (data.length > 0) {
+                    let rowsHtml = '';
+                    data.forEach((item, index) => {
+                        let statusBadge;
+                        switch (item.couponStatus) {
+                            case '교환': statusBadge = '<span class="badge bg-success">교환</span>'; break;
+                            case '미교환': statusBadge = '<span class="badge bg-secondary">미교환</span>'; break;
+                            case '폐기': statusBadge = '<span class="badge bg-danger">폐기</span>'; break;
+                            default: statusBadge = `<span class="badge bg-light text-dark">${item.couponStatus}</span>`; break;
+                        }
+
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        const expiryDate = new Date(item.expiryDate);
+                        const isExpired = expiryDate < today;
+                        let expiryDateHtml = item.expiryDate;
+                        if (isExpired) {
+                            expiryDateHtml += '<span class="text-danger ms-1">(만료)</span>';
+                        }
+
+                        const isCsDisabled = isExpired || item.couponStatus === '교환' || item.couponStatus === '폐기';
+                        const buttonClass = isCsDisabled ? 'btn-outline-secondary' : 'btn-dark';
+                        const disabledAttribute = isCsDisabled ? 'disabled' : '';
+
+                        const hasHistory = item.history && item.history.length > 0;
+                        const historyId = `history-${item.no}`;
+                        const toggleAttributes = hasHistory ? `data-bs-toggle="collapse" data-bs-target="#${historyId}"` : '';
+                        const rowClass = hasHistory ? 'accordion-toggle' : '';
+                        const expandIcon = hasHistory ? '<i class="fas fa-caret-down ms-2 text-muted"></i>' : '';
+
+                        // 메인 행(row) 생성
+                        rowsHtml += `
+                            <tr class="main-row ${rowClass}" data-history-id="${historyId}" style="${hasHistory ? 'cursor: pointer;' : ''}">
+                                <td class="col-no">${(tableBody.querySelectorAll('tr.main-row').length) + index + 1}${expandIcon}</td>
+                                <td class="col-cs-datetime">${item.dispatchDate}</td>
+                                <td class="truncate-text col-cs-client" title="${item.client}">${item.client}</td>
+                                <td class="truncate-text" title="${item.event}">${item.event}</td>
+                                <td class="truncate-text" title="${item.productName}">${item.productName}</td>
+                                <td class="col-cs-price">${item.unitPrice.toLocaleString()}</td>
+                                <td class="col-cs-expiry">${expiryDateHtml}</td>
+                                <td class="col-cs-status">${statusBadge}</td>
+                                <td class="col-cs-phone" title="${item.recipientPhone}">***-****-${item.recipientPhone.slice(-4)}</td>
+                                <td class="col-cs-coupon" title="${item.couponNumber}">${item.couponNumber.slice(0, -6)}******</td>
+                                <td class="col-cs-action">
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-sm ${buttonClass}" onclick="showCsConfirmModal('재발송', '${item.couponNumber} 쿠폰을 재발송 하시겠습니까?', () => showSuccessModal('재발송 처리되었습니다.'))" ${disabledAttribute}>재발송</button>
+                                        <button class="btn btn-sm ${buttonClass}" onclick="showCsConfirmModal('쿠폰폐기', '${item.couponNumber} 쿠폰을 폐기 하시겠습니까?', () => { item.couponStatus = '폐기'; searchBtn.click(); showSuccessModal('쿠폰이 폐기되었습니다.'); })" ${disabledAttribute}>쿠폰폐기</button>
+                                        <button class="btn btn-sm ${buttonClass}" onclick="showChangePhoneModal('${item.couponNumber}', '${item.recipientPhone}')" ${disabledAttribute}>번호변경</button>
+                                        <button class="btn btn-sm ${buttonClass}" onclick="showEtcCsModal('${item.couponNumber}')" ${disabledAttribute}>기타</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+
+                        // History Row (if exists)
+                        if (hasHistory) {
+                            rowsHtml += `
+                                <tr class="collapse-row">
+                                    <td style="border: none;"></td>
+                                    <td colspan="10" class="p-0" style="border: none;">
+                                        <div id="${historyId}" class="collapse">
+                                            <div class="p-3" style="background-color: #f8f9fa;">                                                <h6 class="mb-2 text-start"><i class="fas fa-history me-2"></i>CS 처리 이력</h6>
+                                                <table class="table table-sm table-bordered bg-white mb-0">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th style="width: 150px;">처리일시</th>
+                                                            <th style="width: 100px;">처리유형</th>
+                                                            <th>상담 메모</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        ${item.history.map(h => `
+                                                            <tr>
+                                                                <td>${h.date}</td>
+                                                                <td>${h.type}</td>
+                                                                <td class="text-start">${h.memo}</td>
+                                                            </tr>
+                                                        `).join('')}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `;
+                        }
+                    });
+                    if (append) { // 무한 스크롤 시
+                        tableBody.insertAdjacentHTML('beforeend', rowsHtml);
+                    } else { // 최초 로드 또는 검색 시
+                        tableBody.innerHTML = rowsHtml;
+                    }
+                } else if (!append) {
+                    tableBody.innerHTML = '<tr><td colspan="11">조회된 결과가 없습니다.</td></tr>';
+                }
+
+                const totalCount = displayedResults.length;
+                const currentDisplayCount = totalCount > 0 ? tableBody.children.length : 0;
+                totalResultsEl.textContent = `조회 결과 (${currentDisplayCount} / ${totalCount}건)`;
+            };
+
+            const sortData = (data, key, direction) => {
+                return [...data].sort((a, b) => {
+                    let valA = a[key];
+                    let valB = b[key];
+                    if (key === 'dispatchDate' || key === 'expiryDate') {
+                        valA = new Date(valA);
+                        valB = new Date(valB);
+                    }
+                    if (valA < valB) return direction === 'asc' ? -1 : 1;
+                    if (valA > valB) return direction === 'asc' ? 1 : -1;
+                    return 0;
+                });
+            };
+
+            const loadMoreData = () => {
+                if (isLoading || tableBody.children.length >= displayedResults.length) return;
+                isLoading = true;
+                loadingSpinner.classList.remove('d-none');
+                setTimeout(() => {
+                    const nextData = displayedResults.slice(tableBody.children.length, tableBody.children.length + ROWS_PER_LOAD);
+                    renderTable(nextData, true);
+                    isLoading = false;
+                    loadingSpinner.classList.add('d-none');
+                }, 300);
+            };
+
+            searchBtn.addEventListener('click', function() {
+                const couponNumber = queryCouponNumberEl.value.trim();
+                const phoneNumber = queryPhoneNumberEl.value.trim();
+                tableSearchInput.value = '';
+
+                currentResults = allCsData.filter(item => {
+                    const isCouponMatch = !couponNumber || item.couponNumber.includes(couponNumber);
+                    const isPhoneMatch = !phoneNumber || item.recipientPhone.replace(/-/g, '').includes(phoneNumber);
+                    return isCouponMatch && isPhoneMatch;
+                });
+
+                displayedResults = sortData(currentResults, sortState.key, sortState.direction);
+                renderTable(displayedResults.slice(0, ROWS_PER_LOAD));
+                updateSortIcons();
+            });
+
+            // 아코디언 클릭 이벤트 처리 (이벤트 위임)
+            tableBody.addEventListener('click', (e) => {
+                const row = e.target.closest('tr.accordion-toggle');
+                if (!row) return;
+
+                // CS 처리 버튼 영역을 클릭한 경우는 무시
+                if (e.target.closest('.col-cs-action')) {
+                    return;
+                }
+
+                const historyId = row.dataset.historyId;
+                const historyCollapse = document.getElementById(historyId);
+                if (historyCollapse) new bootstrap.Collapse(historyCollapse).toggle();
+            });
+
+            // 조회 조건 입력창에서 Enter 키 누르면 조회 실행
+            [queryCouponNumberEl, queryPhoneNumberEl].forEach(input => {
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault(); // 폼의 기본 제출 동작 방지
+                        searchBtn.click(); // 조회 버튼 클릭
+                    }
+                });
+            });
+
+            tableSearchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const filtered = currentResults.filter(item => {
+                    return item.client.toLowerCase().includes(searchTerm) ||
+                           item.event.toLowerCase().includes(searchTerm) ||
+                           item.productName.toLowerCase().includes(searchTerm) ||
+                           item.recipientPhone.replace(/-/g, '').includes(searchTerm) ||
+                           item.couponNumber.includes(searchTerm) ||
+                           item.couponStatus.toLowerCase().includes(searchTerm);
+                });
+                displayedResults = sortData(filtered, sortState.key, sortState.direction);
+                renderTable(displayedResults.slice(0, ROWS_PER_LOAD));
+            });
+
+            const updateSortIcons = () => {
+                tableHeader.querySelectorAll('th[data-sortable]').forEach(th => {
+                    const icon = th.querySelector('.sort-icon');
+                    if (!icon) return;
+                    icon.className = 'sort-icon fas fa-sort';
+                    if (th.dataset.sortKey === sortState.key) {
+                        icon.className = sortState.direction === 'asc' ? 'sort-icon fas fa-sort-up' : 'sort-icon fas fa-sort-down';
+                    }
+                });
+            };
+
+            tableHeader.addEventListener('click', (e) => {
+                const header = e.target.closest('th[data-sortable]');
+                if (!header) return;
+                const key = header.dataset.sortKey;
+                const direction = (sortState.key === key && sortState.direction === 'desc') ? 'asc' : 'desc';
+                sortState = { key, direction };
+                displayedResults = sortData(displayedResults, sortState.key, sortState.direction);
+                renderTable(displayedResults.slice(0, ROWS_PER_LOAD));
+                updateSortIcons();
+            });
+
+            window.addEventListener('scroll', () => {
+                if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 200 && !isLoading) {
+                    loadMoreData();
+                }
+            });
+
+            const setupClearButton = (inputId) => {
+                const input = document.getElementById(inputId);
+                const clearBtn = input.closest('.input-group').querySelector('.clear-input-btn');
+                if (!input || !clearBtn) return;
+                const toggleClearBtn = () => {
+                    clearBtn.style.display = input.value ? 'block' : 'none';
+                };
+                input.addEventListener('input', toggleClearBtn);
+                clearBtn.addEventListener('click', () => {
+                    input.value = '';
+                    toggleClearBtn();
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                    input.focus();
+                });
+            };
+
+            const inputsToSelect = ['queryCouponNumber', 'queryPhoneNumber', 'tableSearchInput'];
+            inputsToSelect.forEach(id => {
+                const input = document.getElementById(id);
+                if (input) {
+                    input.addEventListener('click', () => input.select());
+                }
+            });
+
+            // 초기 화면 설정
+            totalResultsEl.textContent = '조회 결과 (0 / 0건)';
+            setupClearButton('queryCouponNumber');
+            setupClearButton('queryPhoneNumber');
+            setupClearButton('tableSearchInput');
+
+            // CS 처리 모달 관련 로직
+            const csActionModalEl = document.getElementById('csActionModal');
+            const csActionModal = new bootstrap.Modal(csActionModalEl);
+            const csActionModalLabel = document.getElementById('csActionModalLabel');
+            const csActionNotes = document.getElementById('csActionNotes');
+            const csActionModalBody = document.getElementById('csActionModalBody');
+            const csActionConfirmBtn = document.getElementById('csActionConfirmBtn');
+
+            const successModalEl = document.getElementById('successModal');
+            const successModal = new bootstrap.Modal(successModalEl);
+            const successModalBody = document.getElementById('successModalBody');
+            
+            // 공용 알림 모달 관련 로직
+            const alertModalEl = document.getElementById('alertModal');
+            const alertModal = new bootstrap.Modal(alertModalEl);
+            const alertModalBody = document.getElementById('alertModalBody');
+
+            let confirmCallback = null;
+
+            window.showCsConfirmModal = (title, message, onConfirm) => {
+                csActionModalLabel.textContent = title;
+                csActionModalBody.textContent = message;
+                csActionNotes.value = ''; // 메모 초기화
+                confirmCallback = onConfirm;
+                csActionModal.show();
+            };
+
+            csActionConfirmBtn.addEventListener('click', () => {
+                if (typeof confirmCallback === 'function') {
+                    const notes = csActionNotes.value.trim();
+                    console.log(`CS Action Confirmed with notes: ${notes}`); // 메모 내용 콘솔 출력
+
+                    csActionConfirmBtn.dataset.confirmed = 'true'; // 확인 버튼이 눌렸음을 표시
+                    confirmCallback();
+                }
+                csActionModal.hide();
+            });
+
+            window.showSuccessModal = (message) => {
+                successModalBody.textContent = message;
+                successModal.show();
+                setTimeout(() => successModal.hide(), 1500); // 1.5초 후 자동으로 닫힘
+            };
+
+            // 번호 변경 모달 관련 로직
+            const changePhoneModalEl = document.getElementById('changePhoneModal');
+            const changePhoneModal = new bootstrap.Modal(changePhoneModalEl);
+            const currentPhoneNumberEl = document.getElementById('currentPhoneNumber');
+            const newPhoneNumberEl = document.getElementById('newPhoneNumber');
+            const changePhoneNotes = document.getElementById('changePhoneNotes');
+            const changePhoneConfirmBtn = document.getElementById('changePhoneConfirmBtn');
+            let currentCouponNumber = null;
+            let originalPhoneNumber = null; // 원본 번호 저장을 위한 변수 추가
+
+            window.showChangePhoneModal = (couponNumber, originalPhone) => {
+                // 모달 상태 초기화
+                csActionModalEl.dataset.source = '';
+
+                currentCouponNumber = couponNumber;
+                originalPhoneNumber = originalPhone.replace(/-/g, ''); // 하이픈 제거 후 저장
+                // 현재 번호 마스킹 처리
+                currentPhoneNumberEl.value = `***-****-${originalPhone.slice(-4)}`;
+                newPhoneNumberEl.value = ''; // 입력 필드 초기화
+                changePhoneNotes.value = ''; // 메모 초기화
+                changePhoneModal.show();
+            };
+
+            changePhoneConfirmBtn.addEventListener('click', () => {
+                const newPhone = newPhoneNumberEl.value.trim();
+                const notes = changePhoneNotes.value.trim();
+                if (newPhone.length < 10 || newPhone.length > 11) {
+                    alert('휴대폰 번호를 10~11자리로 정확히 입력해주세요.');
+                    newPhoneNumberEl.focus();
+                    return;
+                }
+
+                // 현재 번호와 동일한지 체크하는 로직 추가
+                if (newPhone === originalPhoneNumber) {
+                    changePhoneModal.hide(); // 알림 모달을 띄우기 전에 현재 모달을 먼저 닫습니다.
+                    alertModalBody.textContent = '번호가 동일합니다. 확인 후 다시 입력하세요.';
+                    alertModal.show(); // 그 다음에 알림 모달을 띄웁니다.
+                    newPhoneNumberEl.focus();
+                    return;
+                }
+
+                changePhoneModal.hide(); // 확인 모달을 띄우기 전에 현재 모달을 먼저 닫습니다.
+
+                // '번호 변경'에서 온 확인 모달임을 표시
+                csActionModalEl.dataset.source = 'changePhone';
+
+                // 재사용 가능한 csActionModal을 사용
+                showCsConfirmModal(
+                    '번호 변경 확인', 
+                    `'${newPhone}' 번호로 변경하시겠습니까?`, 
+                    () => {
+                        // TODO: 향후 DB 업데이트 로직 구현 (메모 포함)
+                        // 예: updatePhoneNumber(currentCouponNumber, newPhone, notes);
+                        // 예: updatePhoneNumber(currentCouponNumber, newPhone);
+                        console.log(`쿠폰번호 ${currentCouponNumber}의 휴대폰 번호를 ${newPhone}(으)로 변경 요청`);
+                        changePhoneModal.hide();
+                        showSuccessModal('휴대폰 번호가 변경되었습니다.');
+                    }
+                );
+            });
+
+            // '번호 변경 확인' 모달(csActionModal)이 닫힐 때, '번호 변경' 모달(changePhoneModal)을 다시 띄워줍니다.
+            // 단, 사용자가 '확인'을 눌러 콜백이 실행된 경우는 제외합니다.
+            csActionModalEl.addEventListener('hidden.bs.modal', function (event) {
+                // '번호 변경'에서 시작된 확인 모달이었고, 사용자가 '취소'를 눌렀을 때만 실행
+                if (csActionModalEl.dataset.source === 'changePhone' && csActionConfirmBtn.dataset.confirmed !== 'true') {
+                    changePhoneModal.show(); // '취소'를 눌렀을 때만 다시 띄움
+                }
+                delete csActionConfirmBtn.dataset.confirmed; // 상태 초기화
+                csActionModalEl.dataset.source = ''; // 소스 상태 초기화
+            });
+
+            // '알림' 모달(alertModal)이 닫힐 때, '번호 변경' 모달(changePhoneModal)을 다시 띄워줍니다.
+            alertModalEl.addEventListener('hidden.bs.modal', function (event) {
+                if (changePhoneModal) {
+                    // 모달이 완전히 표시된 후에 포커스 및 선택을 처리하기 위해 'shown' 이벤트를 사용합니다.
+                    changePhoneModalEl.addEventListener('shown.bs.modal', function onShown() {
+                        newPhoneNumberEl.focus();
+                        newPhoneNumberEl.select();
+                        // 이벤트 리스너가 중복으로 쌓이지 않도록 한 번 실행된 후 제거합니다.
+                        changePhoneModalEl.removeEventListener('shown.bs.modal', onShown);
+                    }, { once: true }); // once: true 옵션으로도 동일한 효과를 낼 수 있습니다.
+                    changePhoneModal.show();
+                }
+            });
+
+            // 기타 CS 모달 관련 로직
+            const etcCsModalEl = document.getElementById('etcCsModal');
+            const etcCsModal = new bootstrap.Modal(etcCsModalEl);
+            const etcCsNotes = document.getElementById('etcCsNotes');
+            const etcCsSaveBtn = document.getElementById('etcCsSaveBtn');
+            let etcCsCouponNumber = null;
+
+            window.showEtcCsModal = (couponNumber) => {
+                etcCsCouponNumber = couponNumber;
+                etcCsNotes.value = '';
+                etcCsModal.show();
+            };
+
+            etcCsSaveBtn.addEventListener('click', () => {
+                const notes = etcCsNotes.value.trim();
+                if (!notes) {
+                    alert('상담 내용을 입력해주세요.');
+                    return;
+                }
+                console.log(`기타 CS 저장. 쿠폰번호: ${etcCsCouponNumber}, 내용: ${notes}`);
+                etcCsModal.hide();
+                showSuccessModal('CS 내용이 저장되었습니다.');
+            });
+        });
+    </script>
+</body>
+</html>

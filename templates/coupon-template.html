@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MMS Coupon Template (720×1080)</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #f5f5f5;
+      margin: 0;
+      font-family: "Noto Sans KR", sans-serif;
+    }
+
+    .frame {
+      width: 720px;
+      height: 1080px;
+      background: #ffffff;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .section {
+      width: 100%;
+      border-bottom: 1px solid #ccc;
+      box-sizing: border-box;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: 600;
+      color: #333;
+      letter-spacing: 0.5px;
+      text-align: center;
+      flex-direction: column;
+    }
+
+    .banner {
+      height: 240px;
+      background-color: rgb(0, 115, 207);
+      color: #fff;
+      font-size: 22px;
+    }
+
+    .product-image {
+      height: 300px;
+      background-color: rgb(242, 242, 242);
+      font-size: 20px;
+    }
+
+    .product-title {
+      height: 120px;
+      background-color: rgb(255, 242, 204);
+      font-size: 20px;
+    }
+
+    .barcode {
+      height: 240px;
+      background-color: rgb(232, 232, 232);
+      font-size: 20px;
+    }
+
+    /* 상품정보 영역 (좌: 교환처 / 우: 유효기간) */
+    .info {
+      height: 180px;
+      background-color: rgb(240, 248, 255);
+      display: flex;
+      justify-content: space-between;
+      align-items: stretch;
+      border-top: 1px solid #ccc;
+      font-size: 18px;
+      position: relative;
+      box-sizing: border-box;
+    }
+
+    /* 중앙 구분선 */
+    .info::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 1px;
+      background-color: #999;
+      transform: translateX(-50%);
+    }
+
+    .info-column {
+      width: 50%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;  /* ✅ 수직 가운데 정렬 */
+      align-items: center;      /* ✅ 수평 가운데 정렬 */
+      box-sizing: border-box;
+    }
+
+    .align-note {
+      font-size: 14px;
+      color: #666;
+      font-weight: 400;
+      margin-top: 8px;
+      letter-spacing: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <div class="section banner">
+      상단 배너 영역 (720×240)
+      <div class="align-note">※ 가운데 정렬(center aligned)</div>
+    </div>
+
+    <div class="section product-image">
+      상품 이미지 영역 (720×300)
+      <div class="align-note">※ 가운데 정렬(center aligned)</div>
+    </div>
+
+    <div class="section product-title">
+      상품명 영역 (720×120)
+      <div class="align-note">※ 가운데 정렬(center aligned)</div>
+    </div>
+
+    <div class="section barcode">
+      바코드 영역 (720×240)
+      <div class="align-note">※ 가운데 정렬(center aligned)</div>
+    </div>
+
+    <div class="info">
+      <div class="info-column left">
+        교환처 : GS25
+        <div class="align-note">※ 가운데 정렬(center aligned)</div>
+      </div>
+      <div class="info-column right">
+        유효기간 : 2025.09.29까지
+        <div class="align-note">※ 가운데 정렬(center aligned)</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

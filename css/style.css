@@ -1,0 +1,345 @@
+/* 페이드 전환 효과 */
+body {
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+body.loaded {
+  opacity: 1;
+}
+
+/* General Body Styling */
+body {
+    background-color: #F9FAFB; /* Tailwind's gray-50 */
+    color: #374151; /* Tailwind's gray-700 */
+    font-family: 'Inter', sans-serif; /* A modern sans-serif font */
+}
+
+/* Login Page Specific Styling (Kept as is) */
+.login-container {
+    max-width: 400px;
+    margin: 100px auto;
+    padding: 40px;
+    background-color: #fff;
+    border-radius: 0.75rem; /* 12px */
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Coupon Send Page: General Container */
+.container {
+    max-width: 1200px;
+}
+
+h2 {
+    font-size: 1.875rem; /* 30px */
+    font-weight: 700;
+    color: #111827; /* Tailwind's gray-900 */
+}
+
+/* Card Styling */
+.card {
+    background-color: #FFFFFF;
+    border: none;
+    border-radius: 0.75rem; /* 12px */
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    padding: 2rem; /* 32px */
+}
+
+.card-title {
+    font-size: 1.25rem; /* 20px */
+    font-weight: 600;
+    color: #111827; /* Tailwind's gray-900 */
+    border-bottom: 1px solid #E5E7EB; /* Tailwind's gray-200 */
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem !important;
+}
+
+/* Form Styling */
+.form-label {
+    font-size: 0.875rem; /* 14px */
+    font-weight: 500;
+    color: #4B5563; /* Tailwind's gray-600 */
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+.form-control {
+    background-color: #F9FAFB; /* Tailwind's gray-50 */
+    border: 1px solid #D1D5DB; /* Tailwind's gray-300 */
+    border-radius: 0.375rem; /* 6px */
+    padding: 0.5rem 0.75rem;
+    color: #111827;
+}
+
+.form-control:focus {
+    background-color: #FFFFFF;
+    border-color: #2563EB; /* Tailwind's blue-600 */
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25); /* Focus ring */
+}
+
+/* flatpickr 아이콘 커서 변경 */
+.input-group-text[data-toggle] {
+    cursor: pointer;
+}
+
+/* flatpickr가 생성하는 달력 아이콘에 커서 포인터 적용 */
+.flatpickr-calendar .flatpickr-day:hover,
+.flatpickr-calendar .flatpickr-weekday:hover {
+    cursor: pointer;
+}
+
+.form-control::placeholder {
+    color: #9CA3AF; /* Tailwind's gray-400 */
+}
+
+/* Align items in form rows */
+.row.align-items-center {
+    min-height: 50px;
+}
+
+/* Add some vertical spacing between form sections */
+.card > .row {
+    margin-bottom: 1rem;
+}
+
+/* Right-align labels to reduce space with inputs */
+.row .col-md-2 {
+    text-align: right;
+}
+
+@media (max-width: 767.98px) {
+    .row .col-md-2 {
+        text-align: left;
+    }
+}
+
+/* Product Search Modal Scroll */
+#productSearchModal .modal-body {
+    max-height: 450px;
+    overflow-y: auto;
+}
+
+/* 입력 유효성 검사 실패 시 흔들리는 애니메이션 */
+.is-invalid-shake {
+    animation: shake 0.5s;
+    border-color: #dc3545 !important; /* Bootstrap의 is-invalid 색상 */
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+/* 간편등록 입력창 높이 고정 및 스크롤 처리 */
+#recipientList {
+    height: 190px; /* 8줄에 해당하는 대략적인 높이 */
+    resize: none; /* 사용자가 크기를 조절하지 못하도록 설정 */
+}
+#recipientLineNumbers, #recipientValidation {
+    height: 190px;
+}
+
+/* 수신자 정보 등록 탭 활성화 스타일 */
+#recipient-tabs .nav-link.active {
+    color: #2563EB; /* 폼 포커스 시 사용된 파란색 */
+    background-color: transparent; /* 배경색 제거 */
+    border-bottom-color: #FFFFFF; /* 아래쪽 테두리를 투명하게 하여 라인과 연결된 느낌 제거 */
+}
+
+/* 비활성 탭 스타일 */
+#recipient-tabs .nav-link {
+    color: #4B5563; /* 기본 폼 라벨 색상 */
+}
+
+/* 필수 입력 항목 마크 스타일 */
+.form-label-required::after,
+.card-title-required::after {
+    content: ' *';
+    color: #EF4444; /* Tailwind's red-500 */
+}
+
+/* MMS 미리보기 제목 스타일 */
+.card-title-preview {
+    text-align: center;
+    border-bottom: none;
+    background-color: #4B5563; /* Tailwind's gray-600 */
+    color: #FFFFFF;
+    border-top-left-radius: 0.75rem;
+    border-top-right-radius: 0.75rem;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+/* Header Styling */
+.app-header {
+    background-color: #374151; /* Tailwind's gray-700 */
+    color: #FFFFFF;
+    padding: 1rem 0 0;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.app-header .header-top {
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #4B5563; /* Tailwind's gray-600 */
+}
+
+.app-header .main-title {
+    font-size: 1.875rem; /* 30px */
+    font-weight: 700;
+    margin: 0;
+}
+
+.app-header .header-nav {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+}
+
+.app-header .header-nav .nav-link {
+    color: #D1D5DB; /* Tailwind's gray-300 */
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+}
+
+.app-header .header-nav .nav-link:hover,
+.app-header .header-nav .nav-link.active {
+    color: #FFFFFF;
+}
+
+/* 테이블 정렬 스타일 */
+th[data-sortable] {
+    cursor: pointer;
+    user-select: none;
+}
+
+th[data-sortable]:hover {
+    background-color: #e9ecef;
+}
+
+.sort-icon {
+    margin-left: 5px;
+    color: #6B7280; /* Tailwind's gray-500 */
+}
+
+/* 입력창 클리어 버튼 스타일 */
+.input-group .clear-input-btn {
+    border-left: 0;
+    z-index: 5; /* 포커스 효과 위에 버튼이 보이도록 설정 */
+}
+.input-group .clear-input-btn i {
+    pointer-events: none; /* 아이콘 클릭 시 버튼 이벤트가 발생하도록 설정 */
+}
+
+/* 테이블 셀 내용 줄임표 처리 */
+.truncate-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle; /* 다른 셀과 세로 정렬을 맞춥니다. */
+}
+
+/* 조회 테이블 컬럼별 너비 고정 */
+/* 테이블 행 높이 조정을 위한 스타일 */
+.table th, .table td {
+    padding-top: 0.5rem; /* 기본값 0.5rem에서 조정 */
+    padding-bottom: 0.5rem; /* 기본값 0.5rem에서 조정 */
+    vertical-align: middle; /* 모든 셀 내용을 세로 가운데 정렬 */
+}
+
+.table th {
+    white-space: nowrap;
+}
+
+/* 테이블 레이아웃을 고정하여 너비가 유연하게 조절되도록 함 */
+.table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+/* 발송조회 테이블 컬럼 너비 조정 */
+.table .col-dispatch-datetime { width: 160px; }
+.table .col-expiry-date { width: 160px; }
+.table .col-quantity { width: 80px; }
+.table .col-unit-price { width: 100px; }
+.table .col-total-price { width: 110px; }
+.table .col-status { width: 90px; }
+.table .col-view-detail { width: 80px; }
+.table .col-cancel { width: 90px; }
+
+
+/* 상세 보기 모달 테이블 스타일 */
+#detailModalTable th {
+    background-color: #F9FAFB; /* 헤더 배경색 */
+    text-align: center;
+}
+
+.modal-body .table {
+    table-layout: auto; /* 모달 안에서는 콘텐츠 길이에 맞춰 너비 조절 */
+    min-width: 600px; /* 최소 너비를 지정하여 가로 스크롤이 필요한 경우를 대비 */
+}
+
+/* 상세 보기 모달 컬럼별 너비 */
+/* 각 컬럼의 최소 너비를 보장합니다. */
+.modal-body .table .col-modal-no { width: 60px; }
+.modal-body .table .col-modal-datetime { width: 160px; }
+.modal-body .table .col-modal-client { width: 180px; } /* 줄임말 표시를 위해 너비 고정 */
+.modal-body .table .col-modal-manager { width: 90px; }
+.modal-body .table .col-modal-event { width: 200px; } /* 줄임말 표시를 위해 너비 고정 */
+.modal-body .table .col-modal-orderid { width: 180px; }
+.modal-body .table .col-modal-product { width: 200px; } /* 줄임말 표시를 위해 너비 고정 */
+.modal-body .table .col-modal-price { width: 100px; }
+.modal-body .table .col-modal-sender { width: 130px; }
+.modal-body .table .col-modal-recipient { width: 130px; }
+.modal-body .table .col-modal-status { width: 90px; }
+.modal-body .table .col-modal-coupon { width: 140px; }
+.modal-body .table .col-modal-expiry { width: 110px; }
+
+/* 모달 내 테이블은 레이아웃 고정 */
+.modal-body .table {
+    table-layout: fixed;
+}
+
+.modal-body .table th, .modal-body .table td {
+    vertical-align: middle;
+}
+
+/* 상세 보기 모달 제목 트렌디 스타일 */
+.modal-header {
+    background-color: #F3F4F6; /* Tailwind's gray-100 */
+    border-bottom: 1px solid #E5E7EB; /* Tailwind's gray-200 */
+}
+.modal-title {
+    font-weight: 600;
+    color: #1F2937; /* Tailwind's gray-800 */
+}
+
+/* 테이블 'No' 컬럼 너비 조정 */
+.col-no {
+    width: 70px;
+}
+
+/* C/S 테이블 컬럼 너비 조정 */
+.table .col-cs-datetime { width: 160px; }
+.table .col-cs-client { width: 200px; }
+.table .col-cs-price { width: 100px; }
+.table .col-cs-phone { width: 140px; }
+.table .col-cs-status { width: 100px; }
+.table .col-cs-expiry { width: 150px; }
+.table .col-cs-coupon { width: 150px; }
+.table .col-cs-action { 
+    width: 240px; /* 버튼 3개가 들어갈 충분한 너비 */
+    min-width: 240px;
+}
+
+/* C/S 처리 활성화 버튼에 테두리 추가 */
+.col-cs-action .btn-dark {
+    border-color: #6c757d; /* Bootstrap의 secondary 색상보다 약간 밝은 회색 */
+}
+
+/* CS 처리 확인 모달 본문 스타일 */
+#csActionModal .modal-body .h5 {
+    font-weight: 400;
+    color: #4B5563; /* Tailwind's gray-600 */
+}
