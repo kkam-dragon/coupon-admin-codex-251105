@@ -8,3 +8,4 @@ class RecipientUploadSummary(BaseModel):
     valid_count: int = Field(..., ge=0)
     invalid_count: int = Field(..., ge=0)
     batch_id: int | None = None
+    errors: list[str] = Field(default_factory=list)

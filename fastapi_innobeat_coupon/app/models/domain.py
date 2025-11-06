@@ -133,13 +133,14 @@ class CampaignRecipient(TimestampMixin, AuditMixin, Base):
     __tablename__ = "campaign_recipients"
     __table_args__ = (
         Index("ix_recipient_campaign_status", "campaign_id", "status"),
-        Index("ix_recipient_phone_hash", "enc_phone"),
+        Index("ix_recipient_phone_hash", "phone_hash"),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     campaign_id: Mapped[int] = mapped_column(ForeignKey("campaigns.id", ondelete="CASCADE"))
     batch_id: Mapped[int | None] = mapped_column(ForeignKey("recipient_batches.id", ondelete="SET NULL"))
     enc_phone: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    phone_hash: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
     enc_name: Mapped[bytes | None] = mapped_column(LargeBinary)
     status: Mapped[str] = mapped_column(String(20), default="PENDING", nullable=False)
     validation_error: Mapped[str | None] = mapped_column(String(255))

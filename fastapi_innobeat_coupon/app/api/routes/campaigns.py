@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -15,5 +15,8 @@ def create_campaign_endpoint(payload: CampaignCreate, db: Session = Depends(get_
     """
     sendCoupon 화면의 발송 등록에서 캠페인을 생성한다.
     """
-    campaign = create_campaign(db, payload)
-    return CampaignRead.model_validate(campaign)
+    try:
+        campaign = create_campaign(db, payload)
+        return CampaignRead.model_validate(campaign)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc

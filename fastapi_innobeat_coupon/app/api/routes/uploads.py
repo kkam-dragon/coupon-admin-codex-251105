@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -19,5 +19,14 @@ async def upload_recipients(
     """
     수신자 파일 업로드 엔드포인트 (현재는 요약 정보만 반환하는 골격 상태).
     """
-    summary = handle_recipient_upload(db, campaign_id, file.filename)
-    return summary
+    file_bytes = await file.read()
+    try:
+        summary = handle_recipient_upload(
+            db,
+            campaign_id=campaign_id,
+            filename=file.filename,
+            file_bytes=file_bytes,
+        )
+        return summary
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
