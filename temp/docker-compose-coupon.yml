@@ -1,0 +1,64 @@
+# ❌ version 키는 Compose v2에서는 필요 없음. 경고 제거 목적이라 삭제 가능
+# version: "3.8"
+
+services:
+  mariadb_innobeat_coupon:
+    image: mariadb:11.3
+    container_name: mariadb_innobeat_coupon
+    restart: always
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: innobeat_coupon_db
+      MYSQL_USER: coupon_user
+      MYSQL_PASSWORD: coupon_pass
+      TZ: Asia/Seoul
+    volumes:
+      - D:/_Docker_data/02_couponAdmin/mariadb_innobeat_coupon_data:/var/lib/mysql
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  phpmyadmin_innobeat_coupon:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin_innobeat_coupon
+    restart: always
+    ports:
+      - "8088:80"
+    environment:
+      PMA_HOST: mariadb_innobeat_coupon
+      PMA_USER: root
+      PMA_PASSWORD: root_password
+    depends_on:
+      - mariadb_innobeat_coupon
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  fastapi_innobeat_coupon:
+    build:
+      context: ./fastapi_innobeat_coupon     # ✅ 상대경로로 변경
+      dockerfile: Dockerfile
+    container_name: fastapi_innobeat_coupon
+    restart: always
+    ports:
+      - "8089:80"
+    volumes:
+      - D:/_Docker_data/02_couponAdmin/fastapi_innobeat_coupon:/app       # ✅ 상대경로로 변경
+    depends_on:
+      - mariadb_innobeat_coupon
+    environment:
+      DB_HOST: mariadb_innobeat_coupon
+      DB_USER: coupon_user
+      DB_PASSWORD: coupon_pass
+      DB_NAME: innobeat_coupon_db
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
