@@ -1,14 +1,14 @@
 # 시스템 아키텍처
 
 ## 1. 개요
-본 문서는 모바일 쿠폰 백오피스의 전체 기술 구성을 정의한다. 아키텍처는 Python 3.11 + FastAPI 기반 백엔드, MariaDB 11.3 데이터베이스, SNAP Agent 및 COUFUN API 연동을 중심으로 설계된다.
+본 문서는 모바일 쿠폰 백오피스의 전체 기술 구성을 정의한다. 아키텍처는 Python 3.11 + FastAPI 기반 백엔드, MariaDB 10.x 데이터베이스, SNAP Agent 및 COUFUN API 연동을 중심으로 설계된다.
 
 ## 2. 논리 아키텍처
 ```mermaid
 graph TD
     A[사용자 브라우저] --> B[정적 프런트엔드 (HTML/CSS/JS)]
     B --> C[FastAPI 백엔드 서비스]
-    C --> D[(MariaDB 11.3)]
+    C --> D[(MariaDB 10.x)]
     C --> E[Redis (옵션)]
     C --> F[파일 스토리지/NAS]
     C --> G[COUFUN B2C API]
@@ -21,7 +21,7 @@ graph TD
 | --- | --- | --- |
 | 프런트엔드 | 기존 HTML/JS (Bootstrap, Flatpickr) | GitHub에 정적 배포, 로컬 테스트는 파일 직접 오픈 |
 | 백엔드 | FastAPI + Uvicorn + Gunicorn, Python 3.11 | Docker Compose 로컬 실행, 카페24 VPS systemd 서비스 |
-| 데이터베이스 | MariaDB 11.3 | Docker 내 또는 카페24 VPS 내 별도 서비스, 연결 포트 3306 |
+| 데이터베이스 | MariaDB 10.x | Docker 내 또는 카페24 VPS 내 별도 서비스, 연결 포트 3306 |
 | 캐시/큐 | Redis 7 (선택) | 예약 발송 큐, 작업 잠금, 세션 캐시 |
 | 외부 서비스 | COUFUN B2C API, LG유플러스 SNAP Agent | IP 화이트리스트 필요, HTTPS 호출 |
 | 파일 스토리지 | 로컬 디스크 + SNAP Agent 공유 경로 | MMS 이미지, 배너 자산 저장 |
