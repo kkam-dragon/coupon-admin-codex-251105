@@ -31,39 +31,26 @@
 | `recipient_histories` | `id`, `recipient_id`, `action`, `old_value`, `new_value`, `created_by`, `created_at` | 휴대폰 번호 변경 등 추적 |
 
 ### 2.4 쿠폰 및 이력
-| ���̺� | �ֿ� �÷� | ���� |
+| 테이블 | 주요 컬럼 | 설명 |
 | --- | --- | --- |
-| `coupon_products` | `id`, `goods_id`, `name`, `face_value`, `purchase_price`, `valid_days`, `vendor_status`, `last_synced_at` | ���޻� ��ǰ ����, `goods_id` ����ũ |
-| `product_sync_logs` | `id`, `sync_type`, `request_payload`, `response_code`, `synced_count`, `synced_at`, `status`, `error_detail` | COUFUN API sync ���� ����, sendCoupon ��ǰ �˻�/��� ���� 로그 |
-| `coupon_issues` | `id`, `campaign_id`, `recipient_id`, `order_id`, `barcode_enc`, `valid_end_date`, `status`, `vendor_payload`, `issued_at` | ���� �߱� ���, ���ڵ� ��ȣȭ ���� |
-| `coupon_status_history` | `id`, `coupon_issue_id`, `status`, `status_source`, `status_at`, `memo` | ���޻� push/poll ���, CS ó�� �̷� |
-| `coupon_exchange_details` | `id`, `coupon_issue_id`, `exchange_store`, `exchange_at`, `cancel_at`, `remain_amount` | COUFUN ��ȯ ���� API ���� |
+| `coupon_products` | `id`, `goods_id`, `name`, `face_value`, `purchase_price`, `valid_days`, `vendor_status`, `last_synced_at` | 공급사 상품 정보, `goods_id` 유니크 |
+| `coupon_issues` | `id`, `campaign_id`, `recipient_id`, `order_id`, `barcode_enc`, `valid_end_date`, `status`, `vendor_payload`, `issued_at` | 쿠폰 발급 결과, 바코드 암호화 저장 |
+| `coupon_status_history` | `id`, `coupon_issue_id`, `status`, `status_source`, `status_at`, `memo` | 공급사 push/poll 결과, CS 처리 이력 |
+| `coupon_exchange_details` | `id`, `coupon_issue_id`, `exchange_store`, `exchange_at`, `cancel_at`, `remain_amount` | 문서 5의 교환 정보 API 대응 |
+
 ### 2.5 발송/결과
-| ���̺� | �ֿ� �÷� | ���� |
+| 테이블 | 주요 컬럼 | 설명 |
 | --- | --- | --- |
-| `mms_jobs` | `id`, `campaign_id`, `recipient_id`, `client_key`, `ums_msg_id`, `req_date`, `status`, `retry_count` | SNAP Agent INSERT ��� ���� |
-| `dispatch_results` | `id`, `mms_job_id`, `done_code`, `done_desc`, `telco`, `sent_at`, `completed_at` | UMS_LOG ���� ��� |
-| `coupon_templates` | `id`, `template_key`, `name`, `editor_schema`, `default_variables`, `status`, `updated_at` | sendCoupon �޽��� ���ø��� ����/��ä |
-| `media_assets` | `id`, `file_name`, `storage_path`, `mime_type`, `width`, `height`, `checksum`, `uploaded_by`, `uploaded_at` | ���� ��Ź/�̹��� ��ü ��� |
-| `rendered_mms_assets` | `id`, `campaign_id`, `recipient_id`, `template_id`, `asset_id`, `file_path`, `file_hash`, `created_at` | template + recipient �� ���κ��� ��ȯ�� MMS �̹��� |
+| `mms_jobs` | `id`, `campaign_id`, `recipient_id`, `client_key`, `ums_msg_id`, `req_date`, `status`, `retry_count` | SNAP Agent INSERT 결과 추적 |
+| `dispatch_results` | `id`, `mms_job_id`, `done_code`, `done_desc`, `telco`, `sent_at`, `completed_at` | UMS_LOG 연동 결과 |
+| `rendered_assets` | `id`, `campaign_id`, `recipient_id`, `file_path`, `file_hash`, `created_at` | 생성된 MMS 이미지 파일 |
+
 ### 2.6 CS 및 감사
 | 테이블 | 주요 컬럼 | 설명 |
 | --- | --- | --- |
 | `cs_actions` | `id`, `coupon_issue_id`, `recipient_id`, `action_type`, `reason`, `performed_by`, `performed_at`, `result_status` | 재발송, 폐기, 번호 변경 등 |
 | `audit_logs` | `id`, `user_id`, `action`, `target_type`, `target_id`, `ip_address`, `user_agent`, `created_at`, `success` | 접근/변경 감사 |
 | `encryption_keys` | `id`, `version`, `key_alias`, `rotated_at`, `status` | 키 교체 이력 (옵션) |
-
-### 2.7 ����/��ȸ ���� ����
-| ���̺� | �ֿ� �÷� | ���� |
-| --- | --- | --- |
-| `report_exports` | `id`, `report_type`, `filter_payload`, `row_count`, `status`, `requested_by`, `requested_at`, `completed_at`, `file_path` | sendQuery �˻� ��� ť �� �ٿ�ε� ������ ���� ���� |
-| `query_cursor_bookmarks` | `id`, `query_type`, `last_id`, `filters_hash`, `expires_at`, `created_by` | cursor 기반 API ������ last_id ����/���� ��鼭 ���� |
-
-### 2.8 ���� SNAP/COUFUN �α� ����
-| ��ü | �ֿ� �÷� | ���� |
-| --- | --- | --- |
-| `snap_msg_view` | `ums_msg_id`, `client_key`, `req_ch`, `msg_status`, `telco`, `done_code`, `done_desc`, `synced_at` | SNAP Agent `UMS_MSG`/`UMS_LOG` mirror view, sendCs ��Ÿ SNAP ȣ��� ��ġ ��� |
-| `coufun_status_cache` | `coupon_issue_id`, `status`, `status_source`, `status_at`, `synced_at`, `raw_payload` | COUFUN status/poll ������ �ð� ���� cache ��, sendQuery/CS ó�� ���� |
 
 ## 3. 데이터 흐름
 1. **캠페인 생성**: `campaigns` + `campaign_products` + `campaign_recipients` INSERT → 상태 `DRAFT`.
@@ -85,14 +72,12 @@
 | `recipient_status` | PENDING, VALIDATED, INVALID, SENT, FAILED | 수신자 상태 |
 | `cs_action_type` | RESEND, CHANGE_PHONE, CANCEL_COUPON, NOTE | CS 처리 유형 |
 
-## 6. �ε��� �� ���� ����
-- `campaign_recipients`: `(campaign_id, status)`, `(enc_phone_hash)` (SHA-256 �ؽ� �÷�) �ε���.
-- `coupon_issues`: `(campaign_id, status)`, `(order_id)`, `(valid_end_date)` + sendQuery ������ `(campaign_id, issued_at DESC)` covering index �� ����.
-- `dispatch_results`: `(done_code)`, `(completed_at)` �ε����� ��� ���� ����ȭ.
-- `report_exports`: `(report_type, status, requested_at)` �ε��� + `requested_by` filter�� ���߿� ���� ť ��쿡 ���.
-- `rendered_mms_assets`: `(campaign_id, recipient_id)` �ε��� + `file_hash` unique index�� download ��� ��ȿ��.
-- ��Ƽ�Ŵ�: `dispatch_results`, `coupon_status_history`, `report_exports`�� �� ���� ��Ƽ�� ����.
-- ��ŷ/����: `coupon_issues`, `coupon_status_history`�� YYYYMM ��ŷ(�մ� 1 ��ϴ�)�� sendQuery range scan �� ���̿���.
+## 6. 인덱스 및 성능 전략
+- `campaign_recipients`: `(campaign_id, status)`, `(enc_phone_hash)` (SHA-256 해시 컬럼) 인덱스.
+- `coupon_issues`: `(campaign_id, status)`, `(order_id)`, `(valid_end_date)`.
+- `dispatch_results`: `(done_code)`, `(completed_at)` 인덱스로 통계 쿼리 최적화.
+- 파티셔닝: `dispatch_results`, `coupon_status_history`는 월 단위 파티션 고려.
+
 ## 7. 데이터 보존 정책
 - 발송/쿠폰 로그: 2년 보관, 이후 비식별화 후 아카이브.
 - 엑셀 원본: 7일 후 자동 삭제.
