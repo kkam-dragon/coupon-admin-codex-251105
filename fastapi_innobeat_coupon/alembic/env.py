@@ -21,6 +21,20 @@ if config.config_file_name is not None:
 
 target_metadata = Base.metadata
 
+EXCLUDED_TABLE_PREFIXES = (
+    "UMS_",
+    "MMS_",
+    "SC_",
+    "MSGHUB_",
+)
+
+
+def include_object(object_, name, type_, reflected, compare_to):
+    if type_ == "table" and name.upper().startswith(EXCLUDED_TABLE_PREFIXES):
+        return False
+    return True
+
+
 section = config.config_ini_section
 config.set_section_option(section, "DB_USER", settings.db_user)
 config.set_section_option(section, "DB_PASSWORD", settings.db_password)
@@ -33,7 +47,12 @@ def run_migrations_offline() -> None:
         f"mysql+pymysql://{settings.db_user}:{settings.db_password}"
         f"@{settings.db_host}:{settings.db_port}/{settings.db_name}"
     )
-    context.configure(url=url, target_metadata=target_metadata, literal_binds=True)
+    context.configure(
+        url=url,
+        target_metadata=target_metadata,
+        literal_binds=True,
+        include_object=include_object,
+    )
 
     with context.begin_transaction():
         context.run_migrations()
@@ -47,7 +66,11 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata,
+            include_object=include_object,
+        )
 
         with context.begin_transaction():
             context.run_migrations()

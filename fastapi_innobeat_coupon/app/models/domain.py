@@ -156,6 +156,18 @@ class RecipientHistory(TimestampMixin, AuditMixin, Base):
     new_value: Mapped[str | None] = mapped_column(Text)
 
 
+class RecipientValidationError(TimestampMixin, Base):
+    __tablename__ = "recipient_validation_errors"
+    __table_args__ = (Index("ix_validation_batch_row", "batch_id", "row_number"),)
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    batch_id: Mapped[int] = mapped_column(ForeignKey("recipient_batches.id", ondelete="CASCADE"))
+    row_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    raw_phone: Mapped[str | None] = mapped_column(String(32))
+    raw_name: Mapped[str | None] = mapped_column(String(100))
+    reason: Mapped[str] = mapped_column(String(255), nullable=False)
+
+
 class CouponProduct(TimestampMixin, AuditMixin, Base):
     __tablename__ = "coupon_products"
 

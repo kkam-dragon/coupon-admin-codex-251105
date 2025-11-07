@@ -18,6 +18,10 @@ class Settings(BaseSettings):
         default="0123456789abcdeffedcba98765432100123456789abcdeffedcba9876543210",
         alias="ENCRYPTION_KEY",
     )
+    snap_traffic_type: str = Field(default="normal", alias="SNAP_TRAFFIC_TYPE")
+    snap_req_channel: str = Field(default="MMS", alias="SNAP_REQ_CHANNEL")
+    snap_req_dept_code: str | None = Field(default=None, alias="SNAP_REQ_DEPT_CODE")
+    snap_req_user_id: str | None = Field(default=None, alias="SNAP_REQ_USER_ID")
 
     model_config = SettingsConfigDict(
         env_file=(".env", ),

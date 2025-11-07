@@ -29,7 +29,6 @@
 | `recipient_batches` | `id`, `campaign_id`, `upload_type`, `original_filename`, `total_count`, `valid_count`, `invalid_count`, `uploaded_by` | 간편등록/엑셀 업로드 메타 |
 | `campaign_recipients` | `id`, `campaign_id`, `batch_id`, `enc_phone`, `enc_name`, `status`, `validation_error`, `created_at` | 수신자별 상태 (PENDING/VALID/INVALID/SENT 등) |
 | `recipient_histories` | `id`, `recipient_id`, `action`, `old_value`, `new_value`, `created_by`, `created_at` | 휴대폰 번호 변경 등 추적 |
-| `recipient_validation_errors` | `id`, `batch_id`, `row_number`, `raw_phone`, `raw_name`, `reason`, `created_at` | CSV import errors (invalid format/duplicate) log |
 
 ### 2.4 쿠폰 및 이력
 | ���̺� | �ֿ� �÷� | ���� |
@@ -91,7 +90,6 @@
 - `coupon_issues`: `(campaign_id, status)`, `(order_id)`, `(valid_end_date)` + sendQuery ������ `(campaign_id, issued_at DESC)` covering index �� ����.
 - `dispatch_results`: `(done_code)`, `(completed_at)` �ε����� ��� ���� ����ȭ.
 - `report_exports`: `(report_type, status, requested_at)` �ε��� + `requested_by` filter�� ���߿� ���� ť ��쿡 ���.
-- `recipient_validation_errors`: `(batch_id, row_number)` index for CSV error review and UI download.
 - `rendered_mms_assets`: `(campaign_id, recipient_id)` �ε��� + `file_hash` unique index�� download ��� ��ȿ��.
 - ��Ƽ�Ŵ�: `dispatch_results`, `coupon_status_history`, `report_exports`�� �� ���� ��Ƽ�� ����.
 - ��ŷ/����: `coupon_issues`, `coupon_status_history`�� YYYYMM ��ŷ(�մ� 1 ��ϴ�)�� sendQuery range scan �� ���̿���.
