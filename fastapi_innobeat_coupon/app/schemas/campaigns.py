@@ -13,7 +13,12 @@ class CampaignProductItem(BaseModel):
 
 
 class CampaignCreate(BaseModel):
-    client_id: int
+    client_id: int | None = Field(default=None, description="기존 클라이언트 ID (선택)")
+    client_name: str = Field(..., max_length=100)
+    sales_manager_name: str | None = Field(default=None, max_length=100)
+    requester_name: str = Field(..., max_length=100)
+    requester_phone: str | None = Field(default=None, max_length=20)
+    requester_email: str | None = Field(default=None, max_length=254)
     event_name: str = Field(..., max_length=100)
     scheduled_at: datetime | None = None
     sender_number: str = Field(..., max_length=20)
@@ -28,8 +33,13 @@ class CampaignRead(BaseModel):
     id: int
     campaign_key: str
     client_id: int
+    client_name: str | None = None
     event_name: str
     scheduled_at: datetime | None
     sender_number: str
     message_title: str
     status: str
+    sales_manager_name: str | None = None
+    requester_name: str | None = None
+    requester_phone: str | None = None
+    requester_email: str | None = None

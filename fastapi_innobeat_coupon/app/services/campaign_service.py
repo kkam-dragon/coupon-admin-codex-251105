@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from secrets import token_hex
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.crypto import encrypt_value, hash_value
 from app.models.domain import Campaign, CampaignProduct, Client, CouponProduct
 from app.schemas.campaigns import CampaignCreate
 
@@ -16,11 +18,17 @@ def _generate_campaign_key() -> str:
 
 
 def create_campaign(db: Session, payload: CampaignCreate) -> Campaign:
-    client = db.get(Client, payload.client_id)
-    if not client:
-        raise ValueError("존재하지 않는 클라이언트입니다.")
+    client_name_snapshot = payload.client_name.strip()
+    client = None
+    if payload.client_id is not None:
+        client = db.get(Client, payload.client_id)
+        if not client:
+            raise ValueError("�������� �ʴ� Ŭ���̾�Ʈ�Դϴ�.")
+        if not client_name_snapshot:
+            client_name_snapshot = client.name
+
     if not payload.product_items:
-        raise ValueError("최소 1개의 상품을 선택해야 합니다.")
+        raise ValueError("�ּ� 1���� ��ǰ�� �����ؾ� �մϴ�.")
 
     product_ids = {item.coupon_product_id for item in payload.product_items}
     existing_ids = set(
@@ -29,16 +37,30 @@ def create_campaign(db: Session, payload: CampaignCreate) -> Campaign:
         )
     )
     if product_ids - existing_ids:
-        raise ValueError("선택한 상품 중 일부가 존재하지 않습니다.")
+        raise ValueError("������ ��ǰ �� �Ϻΰ� �������� �ʽ��ϴ�.")
+
+    normalized_phone = _normalize_phone(payload.requester_phone)
 
     campaign = Campaign(
         campaign_key=_generate_campaign_key(),
-        client_id=payload.client_id,
+        client_id=payload.client_id if client else None,
+        client_name=client_name_snapshot,
         event_name=payload.event_name,
         scheduled_at=payload.scheduled_at,
         sender_number=payload.sender_number,
         message_title=payload.message_title,
         message_body=payload.message_body,
+        sales_manager_name=payload.sales_manager_name,
+        requester_name_enc=encrypt_value(payload.requester_name),
+        requester_phone_enc=encrypt_value(normalized_phone)
+        if normalized_phone
+        else None,
+        requester_phone_hash=hash_value(normalized_phone)
+        if normalized_phone
+        else None,
+        requester_email_enc=encrypt_value(payload.requester_email)
+        if payload.requester_email
+        else None,
         status="DRAFT",
     )
     db.add(campaign)
@@ -56,3 +78,10 @@ def create_campaign(db: Session, payload: CampaignCreate) -> Campaign:
     db.commit()
     db.refresh(campaign)
     return campaign
+
+
+def _normalize_phone(phone: str | None) -> str | None:
+    if not phone:
+        return None
+    digits = re.sub(r"\D", "", phone)
+    return digits or None

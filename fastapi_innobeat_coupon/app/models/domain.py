@@ -20,6 +20,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.core.crypto import decrypt_value
 from app.models.base import AuditMixin, Base, TimestampMixin
 
 
@@ -85,14 +86,32 @@ class Campaign(TimestampMixin, AuditMixin, Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     campaign_key: Mapped[str] = mapped_column(String(40), unique=True, nullable=False)
-    client_id: Mapped[int] = mapped_column(ForeignKey("clients.id"))
+    client_id: Mapped[int | None] = mapped_column(ForeignKey("clients.id"), nullable=True)
+    client_name: Mapped[str | None] = mapped_column(String(100))
     event_name: Mapped[str] = mapped_column(String(100), nullable=False)
     scheduled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     sender_number: Mapped[str] = mapped_column(String(20), nullable=False)
     message_title: Mapped[str] = mapped_column(String(120), nullable=False)
     message_body: Mapped[str] = mapped_column(Text, nullable=False)
     banner_asset_id: Mapped[int | None] = mapped_column(ForeignKey("media_assets.id"))
+    sales_manager_name: Mapped[str | None] = mapped_column(String(100))
+    requester_name_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    requester_phone_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
+    requester_phone_hash: Mapped[bytes | None] = mapped_column(LargeBinary)
+    requester_email_enc: Mapped[bytes | None] = mapped_column(LargeBinary)
     status: Mapped[str] = mapped_column(String(20), default="DRAFT", nullable=False)
+
+    @property
+    def requester_name(self) -> str | None:
+        return decrypt_value(self.requester_name_enc)
+
+    @property
+    def requester_phone(self) -> str | None:
+        return decrypt_value(self.requester_phone_enc)
+
+    @property
+    def requester_email(self) -> str | None:
+        return decrypt_value(self.requester_email_enc)
 
 
 class CampaignStatusLog(TimestampMixin, Base):
