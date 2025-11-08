@@ -41,11 +41,6 @@
 - 공급사 상품 API(`coufunCreate`, `coufunPartAmountStatus`, `상품정보 API`)를 사용해 `coupon_products` 테이블을 매일 동기화.
 - UI 검색 시 로컬 DB 캐시 사용, 가용 여부/가격 변경이 발생하면 `product_sync_logs`에 기록.
 
-#### 3.2.1 COUFUN 상품 응답 매핑 (MyDocuments/01_쿠폰공급사API/1.COUFUN_B2C_상품정보_연동매뉴얼.md)
-- coufunProduct.do 응답은 RESULT_CODE/RESULT_MSG, LIST_CNT, PRODUCT_INFO[].CAT_ID, GOODS_ID, GOODS_NAME, GOODS_ORI_PRICE, GOODS_PRICE, VALID_END_TYPE(D/E), VALID_END_DATE, SEND_TYPE, IMAGE_PATH_*를 전달하므로 해당 필드를 그대로 파싱해 coupon_products/UI에 노출한다.
-- VALID_END_TYPE가 D이면 VALID_END_DATE는 발급 후 N일을 의미하고, E이면 YYYYMMDD 형식의 만료일이다.
-- 요청/응답 메타는 product_sync_logs.sync_type=response_code/status/error_detail에 기록하고, COUFUN API 오류 시 전체 sync 트랜잭션을 롤백한다.
-
 ### 3.3 캠페인 저장
 - 캠페인 생성 시 공통 키(`YYYYMMDDHHMISSinnobeatXXXXXXXX`)를 `campaigns.campaign_key`와 `UMS_MSG.CLIENT_KEY`에 공통 사용.
 - 수신자 업로드는 `recipient_batches`(파일 메타)와 `campaign_recipients`(암호화 휴대폰, 업로드 타입)으로 저장.
@@ -59,22 +54,10 @@
 5. SNAP Agent 결과 로그(UMS_LOG_YYYYMM)를 `/campaigns/{id}/dispatch/results/sync`로 동기화하여 dispatch_results/coupon_status_history를 갱신.
 5. 발송 결과는 `UMS_LOG_YYYYMM` 폴링 또는 콜백으로 받아 `dispatch_results`에 적재.
 
-### 3.5 ���� ó��
-- ���� ���� ���� �� �ִ� 3ȸ ��õ�, ���� coupon_issues.status='ISSUE_FAILED'�� ����ϰ� ������ �˸�.
-- SNAP Agent INSERT ���� �� ��õ� ť�� ����, 5ȸ ���� �� ķ���� ���� 'ERROR'.
-- ���� ��� �� ��Ŀ ť���� �����ϰ�, �߱޵� ������ ���޻� ��� API�� ȸ�� �� ���� ����.
-
-#### 3.5.1 COUFUN ����/��� ���� �� �����ڵ� ���� (MyDocuments/01_�߰������API/3.COUFUN_B2C_������ȸ_�ݾ���ȸ_�����Ŵ���.md, MyDocuments/01_�߰������API/4.COUFUN_B2C_�������_�����Ŵ���.md, MyDocuments/01_�߰������API/6.COUFUN_B2C_�ڵ����Ǽ�_�����Ŵ���.md)
-- coufunPartAmountStatus.do�� coufunPartCancel.do�� GOODS_ID+BARCODE_NUM�� ��� �䱸�ϹǷ� CampaignProduct���� GOODS_ID�� �������� �� ȣ���Ѵ�.
-- ���� ��ø STATUS(000/001/100), COUPON_TYPE, ORDER_DATE, EXCHANGE_DATE, CANCEL_DATE, REMAIN_AMOUNT, TOTAL_AMOUNT ���� ������ coupon_status_history �޸� �� UI ��(�̻��/���/���)�� �ݿ��Ѵ�.
-- Result Code�� 00/0000�� �������� ����, 01~31�� �ٽýǸ� ��/��� ��������, 50/95/98/99�� �ý���/���� ������ �����Ͽ� 0.4�� ��� ���� �����(�ִ� 3ȸ) �� ��õ �� ���� ��߿� ���ó �غ�/DB ���ý��� �ٽýƿ� �Ѵ�.
-- ��� ��õ ��� ������ ProductSyncLog �Ǵ� dispatch error ����Ʈ�� 
-esponse_code �� ���� �����ڼ��� ��� �������Ͽ� �ٽýǸ� �������� �з���.
-
-#### 3.5.2 SNAP DONE_CODE 분류 및 자동 동기화 (MyDocuments/02_LG유플러스/3.LG유플러스-발송결과확인방법.md, MyDocuments/04_dockerInfo_sanp_agent/snap_agent_setting_info.md)
-- APScheduler 기반 `snap_result_sync` 잡이 `SNAP_SYNC_INTERVAL_SECONDS` 주기로 `UMS_LOG_YYYYMM`를 조회하여 `DispatchResult`와 `coupon_status_history`를 최신화한다. 환경 제어는 `.env`의 `SNAP_SYNC_ENABLED`, `SNAP_SYNC_LOOKBACK_MINUTES`로 수행한다.
-- DONE_CODE 분류: `00000`·0xxxx → 성공(`COMPLETED`/`DELIVERED`), 21000~25000·29000 → 게이트웨이 오류(재시도 대상), 90000~99999 → SNAP Agent/시스템 오류(재시도 대상). 그 외 값은 수신자·통신사 오류로 간주한다.
-- 재시도 대상 오류는 `response_code`와 `DONE_CODE_DESC`를 함께 로깅하고 운영자가 원인 조치 후 재전송한다.
+### 3.5 예외 처리
+- 쿠폰 발행 실패 시 최대 3회 재시도, 이후 `coupon_issues.status`='ISSUE_FAILED'로 기록하고 관리자 알림.
+- SNAP Agent INSERT 실패 시 재시도 큐에 저장, 5회 실패 시 캠페인 상태 'ERROR'.
+- 예약 취소 시 워커 큐에서 제거하고, 발급된 쿠폰은 공급사 취소 API로 회수 후 상태 변경.
 
 ## 4. 발송조회(sendQuery.html)
 - 검색 조건: 발송일 범위, 고객사명, 이벤트명. 기본 최근 7일.

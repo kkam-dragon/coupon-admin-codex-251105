@@ -98,7 +98,14 @@ def fetch_delivery_status(
     table_name = f"UMS_LOG_{table_suffix}"
     sql = text(
         f"""
-        SELECT DONE_CODE, DONE_DESC, DONE_RECEIVE_DATE
+        SELECT
+            DONE_CODE,
+            DONE_DESC,
+            DONE_RECEIVE_DATE,
+            DONE_TELCO,
+            DONE_PRODUCT,
+            DONE_FB_DETAIL,
+            SENT_DATE
         FROM {table_name}
         WHERE CLIENT_KEY = :client_key
         ORDER BY DONE_RECEIVE_DATE DESC

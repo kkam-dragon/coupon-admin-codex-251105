@@ -14,6 +14,10 @@ from app.models.domain import (
 )
 from app.schemas.dispatch import DispatchSyncSummary
 from app.services import snap_service
+from app.services.snap_done_code_service import (
+    DoneCodeClassification,
+    classify_done_code,
+)
 
 
 def sync_dispatch_results(
@@ -47,21 +51,21 @@ def sync_dispatch_results(
 
         dispatch.done_code = result.get("DONE_CODE")
         dispatch.done_desc = result.get("DONE_DESC")
-        dispatch.completed_at = _parse_datetime(result.get("DONE_RECEIVE_DATE"))
-        job.status = "COMPLETED" if _is_success(dispatch.done_code) else "FAILED"
+        dispatch.completed_at = _parse_datetime(
+            result.get("DONE_RECEIVE_DATE") or result.get("DONE_DATE")
+        )
+        dispatch.telco = result.get("DONE_TELCO") or dispatch.telco
+        dispatch.sent_at = dispatch.sent_at or _parse_datetime(result.get("SENT_DATE"))
 
-        _update_coupon_status(db, job.recipient_id, dispatch.done_code, dispatch.done_desc)
+        classification = classify_done_code(dispatch.done_code)
+        job.status = classification.job_status
+
+        _update_coupon_status(db, job.recipient_id, classification, dispatch.done_desc)
 
         updated += 1
 
     db.commit()
     return DispatchSyncSummary(updated=updated, skipped=skipped)
-
-
-def _is_success(done_code: Optional[str]) -> bool:
-    if not done_code:
-        return False
-    return done_code.startswith("0")
 
 
 def _parse_datetime(value: Optional[str]) -> Optional[datetime]:
@@ -80,7 +84,7 @@ def _parse_datetime(value: Optional[str]) -> Optional[datetime]:
 def _update_coupon_status(
     db: Session,
     recipient_id: int,
-    done_code: Optional[str],
+    classification: DoneCodeClassification,
     done_desc: Optional[str],
 ) -> None:
     issue = db.scalar(
@@ -89,14 +93,22 @@ def _update_coupon_status(
     if not issue:
         return
 
-    new_status = "DELIVERED" if _is_success(done_code) else "FAILED"
-    issue.status = new_status
+    issue.status = classification.coupon_status
 
     history = CouponStatusHistory(
         coupon_issue_id=issue.id,
-        status=new_status,
+        status=classification.coupon_status,
         status_source="SNAP",
         status_at=datetime.now(timezone.utc),
-        memo=done_desc,
+        memo=_build_memo(classification, done_desc),
     )
     db.add(history)
+
+
+def _build_memo(classification: DoneCodeClassification, done_desc: Optional[str]) -> str:
+    parts = [classification.label]
+    if done_desc:
+        parts.append(done_desc)
+    else:
+        parts.append(classification.description)
+    return " | ".join(part for part in parts if part)

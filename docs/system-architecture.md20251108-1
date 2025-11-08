@@ -45,8 +45,6 @@ graph TD
 - MMS 발송: `UMS_MSG` 테이블 INSERT (`REQ_CH`='MMS', `MSG_STATUS`='ready', `MMS_FILE_LIST` 규칙). (문서 2-1, 2-2 참조)
 - 발송 결과: `UMS_LOG_YYYYMM` 테이블 폴링 + `DONE_CODE`, `DONE_CODE_DESC` 분석 (문서 3, 4 참조).
 - 이미지 저장: SNAP Agent 홈의 `yyyymmdd` 디렉터리 및 `MSGHUB_IMG` 테이블 자동 등록.
-- APScheduler BackgroundScheduler(snap_result_sync)�� SNAP_SYNC_INTERVAL_SECONDS ��õ���� UMS_LOG_YYYYMM�� �о� dispatch_results/coupon_status_history�� �ڵ鷯 �����ϸ�, SNAP_SYNC_ENABLED, SNAP_SYNC_LOOKBACK_MINUTES�� ���� �ɼ��� �����Ѵ�.
-- DONE_CODE ��� ����(MyDocuments/02_LG���÷���/3.LG���÷���-�߼۰��Ȯ�ι��.md): 0xxxx → ����, 21000~25000·29000 → ������Ʈ/G/W ����(��õ��), 90000~99999 → SNAP Agent/�ý��� ����(��õ��)�� ����Ͽ� MMS job/coupon ���� �� �α׿� �����Ѵ�.
 
 ## 6. 인프라 다이어그램
 ```mermaid
