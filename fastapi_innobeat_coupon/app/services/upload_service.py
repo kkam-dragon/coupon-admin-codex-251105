@@ -137,6 +137,34 @@ def handle_recipient_upload(
     )
 
 
+def list_validation_errors(db: Session, campaign_id: int) -> list[RecipientValidationError]:
+    stmt = (
+        select(RecipientValidationError)
+        .join(RecipientBatch, RecipientBatch.id == RecipientValidationError.batch_id)
+        .where(RecipientBatch.campaign_id == campaign_id)
+        .order_by(RecipientValidationError.row_number.asc())
+    )
+    return list(db.scalars(stmt).all())
+
+
+def generate_validation_error_csv(db: Session, campaign_id: int) -> str:
+    errors = list_validation_errors(db, campaign_id)
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["row_number", "phone", "name", "reason", "logged_at"])
+    for err in errors:
+        writer.writerow(
+            [
+                err.row_number,
+                err.raw_phone or "",
+                err.raw_name or "",
+                err.reason,
+                err.created_at.isoformat() if err.created_at else "",
+            ]
+        )
+    return output.getvalue()
+
+
 def _append_error(
     batch_id: int,
     row_number: int,

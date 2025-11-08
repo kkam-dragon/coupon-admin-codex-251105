@@ -34,6 +34,9 @@
 - API ������ `errors` ���� ����ϸ�, UI���� `recipient_validation_errors` �� �� ��ε� CSV ������ ������ �� ����.
 
 
+- CSV 오류 목록 API: GET /campaigns/{campaign_id}/recipients/errors (JSON).
+- CSV 다운로드: GET /campaigns/{campaign_id}/recipients/errors/export (text/csv).
+
 ### 3.2 상품 관리
 - 공급사 상품 API(`coufunCreate`, `coufunPartAmountStatus`, `상품정보 API`)를 사용해 `coupon_products` 테이블을 매일 동기화.
 - UI 검색 시 로컬 DB 캐시 사용, 가용 여부/가격 변경이 발생하면 `product_sync_logs`에 기록.
@@ -48,6 +51,7 @@
 2. 워커가 공급사 `coufunCreate` API를 수신자당 최대 10건씩 호출하여 쿠폰번호/유효기간을 수집하고 `coupon_issues`에 암호화 저장.
 3. 쿠폰번호와 메시지를 합성해 MMS 이미지를 생성(HTML 템플릿→이미지 변환). 생성 파일은 SNAP Agent 접근 경로에 저장.
 4. SNAP Agent `UMS_MSG`에 캠페인/수신자별 레코드를 INSERT (`REQ_CH`=MMS, `MSG_STATUS`='ready', `MMS_FILE_LIST`에 이미지 경로).
+5. SNAP Agent 결과 로그(UMS_LOG_YYYYMM)를 `/campaigns/{id}/dispatch/results/sync`로 동기화하여 dispatch_results/coupon_status_history를 갱신.
 5. 발송 결과는 `UMS_LOG_YYYYMM` 폴링 또는 콜백으로 받아 `dispatch_results`에 적재.
 
 ### 3.5 예외 처리

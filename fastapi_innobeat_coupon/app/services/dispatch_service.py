@@ -6,16 +6,19 @@ from typing import List
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.crypto import decrypt_value
+from app.core.crypto import decrypt_value, encrypt_value
 from app.models.domain import (
     Campaign,
+    CampaignProduct,
     CampaignRecipient,
+    CouponIssue,
+    CouponProduct,
     MediaAsset,
     MmsJob,
     RenderedMmsAsset,
 )
 from app.schemas.dispatch import DispatchError, DispatchSummary
-from app.services import snap_service
+from app.services import coufun_service, snap_service
 
 
 def dispatch_campaign_messages(db: Session, campaign_id: int) -> DispatchSummary:
@@ -41,8 +44,10 @@ def dispatch_campaign_messages(db: Session, campaign_id: int) -> DispatchSummary
             if not phone:
                 raise ValueError("전화번호 복호화 실패")
 
-            media_path = _resolve_media_path(db, campaign.id, recipient.id, campaign.banner_asset_id)
             client_key = snap_service.build_client_key(campaign.campaign_key, recipient.id)
+            _ensure_coupon_issue(db, campaign, recipient, client_key)
+
+            media_path = _resolve_media_path(db, campaign.id, recipient.id, campaign.banner_asset_id)
 
             snap_service.enqueue_mms_message(
                 db,
@@ -94,3 +99,43 @@ def _resolve_media_path(
         if media:
             return media.storage_path
     return None
+
+
+def _ensure_coupon_issue(
+    db: Session,
+    campaign: Campaign,
+    recipient: CampaignRecipient,
+    client_key: str,
+) -> CouponIssue:
+    existing = db.scalar(
+        select(CouponIssue).where(CouponIssue.recipient_id == recipient.id)
+    )
+    if existing:
+        return existing
+
+    coupon_product = db.scalar(
+        select(CouponProduct)
+        .join(CampaignProduct, CampaignProduct.coupon_product_id == CouponProduct.id)
+        .where(CampaignProduct.campaign_id == campaign.id)
+    )
+    if not coupon_product:
+        raise ValueError("캠페인에 연결된 쿠폰 상품이 없습니다.")
+
+    issue_result = coufun_service.issue_coupon(
+        goods_id=coupon_product.goods_id,
+        tr_id=client_key,
+        create_count=1,
+    )
+
+    issue = CouponIssue(
+        campaign_id=campaign.id,
+        recipient_id=recipient.id,
+        order_id=issue_result.order_id,
+        barcode_enc=encrypt_value(issue_result.barcode),
+        valid_end_date=issue_result.valid_end_date,
+        status="ISSUED",
+        vendor_payload=issue_result.raw_payload,
+        issued_at=datetime.now(timezone.utc),
+    )
+    db.add(issue)
+    return issue

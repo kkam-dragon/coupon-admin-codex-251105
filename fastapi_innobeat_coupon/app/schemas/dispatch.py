@@ -12,3 +12,8 @@ class DispatchSummary(BaseModel):
     enqueued: int
     failed: int
     errors: list[DispatchError]
+
+
+class DispatchSyncSummary(BaseModel):
+    updated: int
+    skipped: int
