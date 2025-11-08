@@ -723,3 +723,369 @@ document.addEventListener('DOMContentLoaded', function() {
     if (dispatchInput && dispatchInput.value) return true; // 발송 예약일시
     return otherFields.some(id => document.getElementById(id) && document.getElementById(id).value.trim() !== '');
 }
+    INVALID_PHONE_FORMAT: "전화번호 형식 오류",
+    DUPLICATE_IN_FILE: "CSV 내 중복",
+    DUPLICATE_IN_CAMPAIGN: "캠페인 내 중복",
+};
+
+const STORAGE_KEYS = {
+    CAMPAIGN_ID: "sendCouponCampaignId",
+};
+
+const API_BASE_URL = (function () {
+    if (typeof document !== "undefined" && document.body) {
+        const explicit = document.body.getAttribute("data-api-base-url")
+            || (document.body.dataset ? document.body.dataset.apiBaseUrl : null);
+        if (explicit) {
+            return explicit;
+        }
+    }
+    if (typeof window !== "undefined" && window.APP_API_BASE_URL) {
+        return window.APP_API_BASE_URL;
+    }
+    return "";
+}());
+
+function buildApiUrl(path) {
+    if (!path.startsWith("/")) {
+        path = `/${path}`;
+    }
+    if (!API_BASE_URL) {
+        return path;
+    }
+    if (API_BASE_URL.endsWith("/") && path.startsWith("/")) {
+        return `${API_BASE_URL.slice(0, -1)}${path}`;
+    }
+    return `${API_BASE_URL}${path}`;
+}
+
+    const config = {
+        method: options.method || "GET",
+        headers: new Headers(options.headers || {}),
+        body: options.body,
+        responseType: options.responseType || "json",
+    };
+
+    if (config.body && !(config.body instanceof FormData) && !config.headers.has("Content-Type")) {
+        if (typeof config.body !== "string") {
+            config.body = JSON.stringify(config.body);
+        }
+        config.headers.set("Content-Type", "application/json");
+    }
+
+    const response = await fetch(buildApiUrl(path), {
+        method: config.method,
+        headers: config.headers,
+        body: config.body,
+    });
+
+    if (!response.ok) {
+        let message = "API 요청에 실패했습니다.";
+        try {
+            const data = await response.json();
+            if (typeof data === "string") {
+                message = data;
+            } else if (data && typeof data === "object") {
+                message = data.detail || data.message || JSON.stringify(data);
+            }
+        } catch (err) {
+            try {
+                const text = await response.text();
+                if (text) message = text;
+            } catch (err2) {
+                console.error(err2);
+            }
+        }
+        throw new Error(message);
+    }
+
+    if (config.responseType === "blob") {
+        return response.blob();
+    }
+    if (config.responseType === "text") {
+        return response.text();
+    }
+    if (response.status === 204) {
+        return null;
+    }
+    return response.json();
+}
+
+function setButtonLoading(button, isLoading, loadingText) {
+    if (!button) return;
+    if (isLoading) {
+        if (!button.dataset.originalText) {
+            button.dataset.originalText = button.innerHTML;
+        }
+        if (loadingText) {
+            button.innerText = loadingText;
+        }
+        button.disabled = true;
+        button.classList.add("disabled");
+    } else {
+        if (button.dataset.originalText) {
+            button.innerHTML = button.dataset.originalText;
+        }
+        button.disabled = false;
+        button.classList.remove("disabled");
+    }
+}
+
+function showInlineAlert(container, type, message) {
+    if (!container) return;
+    if (!message) {
+        container.innerHTML = "";
+        return;
+    }
+    container.innerHTML = `<div class="alert alert-${type} mb-0" role="alert">${message}</div>`;
+}
+
+function getStoredValue(key) {
+    try {
+        return window.localStorage ? window.localStorage.getItem(key) : null;
+    } catch (err) {
+        console.warn("localStorage read failed", err);
+        return null;
+    }
+}
+
+function setStoredValue(key, value) {
+    try {
+        if (window.localStorage) {
+            window.localStorage.setItem(key, value);
+        }
+    } catch (err) {
+        console.warn("localStorage write failed", err);
+    }
+}
+
+function getNumericInputValue(inputElement, label) {
+    if (!inputElement) return null;
+    const raw = inputElement.value.trim();
+    if (!raw) {
+        alert(`${label}을 입력해 주세요.`);
+        inputElement.focus();
+        return null;
+    }
+    const value = Number(raw);
+    if (Number.isNaN(value) || value <= 0) {
+        alert(`${label}은 1 이상의 숫자로 입력해 주세요.`);
+        inputElement.focus();
+        return null;
+    }
+    return value;
+}
+
+function translateReason(code) {
+    if (!code) return "-";
+}
+
+function formatDateTime(value) {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        return value;
+    }
+    return date.toLocaleString();
+}
+
+function renderValidationErrors(errors, tableWrap, tableBody, emptyState) {
+    if (!tableWrap || !tableBody || !emptyState) return;
+
+    if (!errors || errors.length === 0) {
+        tableWrap.classList.add("d-none");
+        emptyState.classList.remove("d-none");
+        emptyState.textContent = "CSV 오류가 없습니다.";
+        tableBody.innerHTML = "";
+        return;
+    }
+
+    const rows = errors.map((err, index) => {
+        const phone = err.raw_phone || "-";
+        const name = err.raw_name || "-";
+        const reason = translateReason(err.reason);
+        const loggedAt = formatDateTime(err.created_at);
+        return `<tr>
+            <td>${index + 1}</td>
+            <td>${phone}</td>
+            <td>${name}</td>
+            <td><span class="badge rounded-pill bg-light text-dark border">${reason}</span></td>
+            <td>${loggedAt}</td>
+        </tr>`;
+    });
+
+    tableBody.innerHTML = rows.join("");
+    tableWrap.classList.remove("d-none");
+    emptyState.classList.add("d-none");
+}
+
+function initCampaignTools() {
+
+    const storedCampaignId = getStoredValue(STORAGE_KEYS.CAMPAIGN_ID);
+    }
+
+        }
+    });
+
+    const refreshErrorsBtn = document.getElementById("refreshErrorsBtn");
+    const downloadErrorsBtn = document.getElementById("downloadErrorsBtn");
+    const messageContainer = document.getElementById("campaignToolsMessage");
+    const emptyState = document.getElementById("validationErrorEmpty");
+
+    async function loadValidationErrors() {
+        if (campaignId == null) return;
+        setButtonLoading(refreshErrorsBtn, true, "조회 중...");
+        showInlineAlert(messageContainer, "info", "CSV 오류를 조회하는 중입니다...");
+        try {
+            renderValidationErrors(errors, tableWrap, tableBody, emptyState);
+            showInlineAlert(messageContainer, "success", `CSV 오류 ${errors.length}건을 조회했습니다.`);
+        } catch (error) {
+            renderValidationErrors([], tableWrap, tableBody, emptyState);
+            showInlineAlert(messageContainer, "danger", error.message || "CSV 오류 조회에 실패했습니다.");
+        } finally {
+            setButtonLoading(refreshErrorsBtn, false);
+        }
+    }
+
+    async function downloadValidationErrors() {
+        if (campaignId == null) return;
+        setButtonLoading(downloadErrorsBtn, true, "다운로드 중...");
+        showInlineAlert(messageContainer, "info", "CSV 오류 파일을 생성하는 중입니다...");
+        try {
+                responseType: "blob",
+            });
+            const url = URL.createObjectURL(blob);
+            const anchor = document.createElement("a");
+            anchor.href = url;
+            anchor.download = `campaign_${campaignId}_validation_errors.csv`;
+            document.body.appendChild(anchor);
+            anchor.click();
+            anchor.remove();
+            URL.revokeObjectURL(url);
+            showInlineAlert(messageContainer, "success", "CSV 오류 파일을 다운로드했습니다.");
+        } catch (error) {
+            showInlineAlert(messageContainer, "danger", error.message || "CSV 오류 다운로드에 실패했습니다.");
+        } finally {
+            setButtonLoading(downloadErrorsBtn, false);
+        }
+    }
+
+    async function syncSnapResults() {
+        if (campaignId == null) return;
+        showInlineAlert(messageContainer, "info", "SNAP DONE_CODE를 동기화하는 중입니다...");
+        try {
+                method: "POST",
+            });
+            const updated = summary && typeof summary.updated === "number" ? summary.updated : 0;
+            const skipped = summary && typeof summary.skipped === "number" ? summary.skipped : 0;
+            showInlineAlert(
+                messageContainer,
+                "success",
+                `SNAP 동기화 완료 - 갱신 ${updated}건, 유지 ${skipped}건`
+            );
+        } catch (error) {
+            showInlineAlert(messageContainer, "danger", error.message || "SNAP 동기화에 실패했습니다.");
+        } finally {
+        }
+    }
+
+    if (refreshErrorsBtn) {
+        refreshErrorsBtn.addEventListener("click", loadValidationErrors);
+    }
+    if (downloadErrorsBtn) {
+        downloadErrorsBtn.addEventListener("click", downloadValidationErrors);
+    }
+    }
+}
+
+function initCouponTools() {
+    const couponCancelReasonInput = document.getElementById("couponCancelReason");
+    const couponStatusResult = document.getElementById("couponStatusResult");
+
+        return;
+    }
+
+    function renderCouponStatus(payload, contextLabel) {
+        if (!payload) {
+            couponStatusResult.classList.add("d-none");
+            couponStatusResult.innerHTML = "";
+            return;
+        }
+        const status = payload.status || "-";
+        const badgeClass = getStatusBadgeClass(status);
+        const remainAmount = typeof payload.remain_amount === "number"
+            ? `${payload.remain_amount.toLocaleString()} 원`
+            : "-";
+        const details = [
+            { label: "상태", value: payload.status_label ? `${status} (${payload.status_label})` : status },
+            { label: "쿠폰 유형", value: payload.coupon_type || "-" },
+            { label: "남은 금액", value: remainAmount },
+            { label: "쿠폰 만료일", value: formatDateTime(payload.valid_end_date) },
+            { label: "교환 일시", value: formatDateTime(payload.exchanged_at) },
+            { label: "취소 일시", value: formatDateTime(payload.cancelled_at) },
+            { label: "바코드", value: payload.barcode || "-" },
+        ];
+        const detailRows = details.map((row) => (
+            `<dt class="col-4 fw-normal">${row.label}</dt><dd class="col-8 mb-1">${row.value}</dd>`
+        )).join("");
+        couponStatusResult.innerHTML = `
+            <div class="alert alert-info mb-0">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <strong>${contextLabel}</strong>
+                    <span class="badge bg-${badgeClass}">${status}</span>
+                </div>
+                <dl class="row mb-0 small">
+                    ${detailRows}
+                </dl>
+            </div>
+        `;
+        couponStatusResult.classList.remove("d-none");
+    }
+
+    function renderCouponError(message) {
+        couponStatusResult.innerHTML = `<div class="alert alert-danger mb-0" role="alert">${message}</div>`;
+        couponStatusResult.classList.remove("d-none");
+    }
+
+    async function requestCouponStatus() {
+        if (couponIssueId == null) return;
+        renderCouponError("쿠폰 상태를 조회하는 중입니다...");
+        try {
+            renderCouponStatus(payload, "상태 조회 결과");
+        } catch (error) {
+            renderCouponError(error.message || "쿠폰 상태 조회에 실패했습니다.");
+        } finally {
+        }
+    }
+
+    async function requestCouponCancel() {
+        if (couponIssueId == null) return;
+        if (!confirm(`쿠폰(ID: ${couponIssueId})을 취소하시겠습니까?`)) {
+            return;
+        }
+        const reasonValue = couponCancelReasonInput.value.trim();
+        const query = reasonValue ? `?reason=${encodeURIComponent(reasonValue)}` : "";
+        renderCouponError("쿠폰 취소를 요청하는 중입니다...");
+        try {
+            renderCouponStatus(payload, "쿠폰 취소 결과");
+        } catch (error) {
+            renderCouponError(error.message || "쿠폰 취소 요청에 실패했습니다.");
+        } finally {
+        }
+    }
+
+}
+
+function getStatusBadgeClass(status) {
+    if (!status) return "secondary";
+    const normalized = status.toUpperCase();
+    if (normalized === "DELIVERED" || normalized === "SENT") return "success";
+    if (normalized === "CANCELLED") return "warning";
+    if (normalized === "USED") return "secondary";
+    return "dark";
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    initCampaignTools();
+    initCouponTools();
+});
