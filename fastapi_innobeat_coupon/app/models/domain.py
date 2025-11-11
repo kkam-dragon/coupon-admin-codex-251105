@@ -35,6 +35,12 @@ class User(TimestampMixin, AuditMixin, Base):
     enc_phone: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="ACTIVE")
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    roles: Mapped[list["Role"]] = relationship(
+        "Role",
+        secondary="user_roles",
+        back_populates="users",
+        lazy="selectin",
+    )
 
 
 class Role(TimestampMixin, AuditMixin, Base):
@@ -44,6 +50,11 @@ class Role(TimestampMixin, AuditMixin, Base):
     code: Mapped[str] = mapped_column(String(30), unique=True, nullable=False)
     name: Mapped[str] = mapped_column(String(50), nullable=False)
     description: Mapped[str | None] = mapped_column(String(255))
+    users: Mapped[list[User]] = relationship(
+        "User",
+        secondary="user_roles",
+        back_populates="roles",
+    )
 
 
 class UserRole(Base):

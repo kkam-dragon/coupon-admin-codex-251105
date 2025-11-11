@@ -17,7 +17,7 @@ def _generate_campaign_key() -> str:
     return f"{timestamp}{token_hex(4)}"
 
 
-def create_campaign(db: Session, payload: CampaignCreate) -> Campaign:
+def create_campaign(db: Session, payload: CampaignCreate, actor: str | None = None) -> Campaign:
     client_name_snapshot = payload.client_name.strip()
     client = None
     if payload.client_id is not None:
@@ -62,6 +62,8 @@ def create_campaign(db: Session, payload: CampaignCreate) -> Campaign:
         if payload.requester_email
         else None,
         status="DRAFT",
+        created_by=actor,
+        updated_by=actor,
     )
     db.add(campaign)
     db.flush()
@@ -72,6 +74,8 @@ def create_campaign(db: Session, payload: CampaignCreate) -> Campaign:
             coupon_product_id=item.coupon_product_id,
             unit_price=item.unit_price,
             settle_price=None,
+            created_by=actor,
+            updated_by=actor,
         )
         db.add(campaign_product)
 

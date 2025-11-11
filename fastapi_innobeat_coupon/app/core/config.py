@@ -29,6 +29,12 @@ class Settings(BaseSettings):
     coufun_poc_id: str | None = Field(default=None, alias="COUFUN_POC_ID")
     coufun_timeout: float = Field(default=10.0, alias="COUFUN_TIMEOUT")
     coufun_mock_mode: bool = Field(default=True, alias="COUFUN_MOCK_MODE")
+    jwt_secret_key: str = Field(default="coupon-admin-secret", alias="JWT_SECRET_KEY")
+    jwt_algorithm: str = Field(default="HS256", alias="JWT_ALGORITHM")
+    access_token_expire_minutes: int = Field(
+        default=30,
+        alias="ACCESS_TOKEN_EXPIRE_MINUTES",
+    )
 
     model_config = SettingsConfigDict(
         env_file=(".env", ),

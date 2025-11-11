@@ -5,6 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
+from app.api import deps
+from app.core.roles import DEFAULT_READ_ROLES, DEFAULT_WRITE_ROLES
 from app.db.session import get_db
 from app.schemas.uploads import RecipientUploadSummary, RecipientValidationErrorRead
 from app.services.upload_service import (
@@ -12,6 +14,7 @@ from app.services.upload_service import (
     handle_recipient_upload,
     list_validation_errors,
 )
+from app.services.audit_service import log_action
 
 router = APIRouter(prefix="/campaigns", tags=["recipients"])
 
@@ -21,6 +24,7 @@ async def upload_recipients(
     campaign_id: int,
     file: UploadFile,
     db: Session = Depends(get_db),
+    current_user: deps.AuthenticatedUser = Depends(deps.require_roles(DEFAULT_WRITE_ROLES)),
 ):
     """
     수신자 파일 업로드 엔드포인트 (현재는 요약 정보만 반환하는 골격 상태).
@@ -33,6 +37,14 @@ async def upload_recipients(
             filename=file.filename,
             file_bytes=file_bytes,
         )
+        log_action(
+            db,
+            user_id=current_user.id,
+            action="recipients.upload",
+            target_type="campaign",
+            target_id=str(campaign_id),
+            commit=True,
+        )
         return summary
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -42,7 +54,11 @@ async def upload_recipients(
     "/{campaign_id}/recipients/errors",
     response_model=list[RecipientValidationErrorRead],
 )
-def get_recipient_errors(campaign_id: int, db: Session = Depends(get_db)):
+def get_recipient_errors(
+    campaign_id: int,
+    db: Session = Depends(get_db),
+    current_user: deps.AuthenticatedUser = Depends(deps.require_roles(DEFAULT_READ_ROLES)),
+):
     """
     최신 업로드 배치에서 발생한 검증 오류 목록을 제공한다.
     """
@@ -54,7 +70,11 @@ def get_recipient_errors(campaign_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/{campaign_id}/recipients/errors/export")
-def export_errors_csv(campaign_id: int, db: Session = Depends(get_db)):
+def export_errors_csv(
+    campaign_id: int,
+    db: Session = Depends(get_db),
+    current_user: deps.AuthenticatedUser = Depends(deps.require_roles(DEFAULT_READ_ROLES)),
+):
     """
     검증 오류 목록을 CSV로 다운로드한다.
     """
@@ -62,6 +82,14 @@ def export_errors_csv(campaign_id: int, db: Session = Depends(get_db)):
     if not csv_text.strip():
         raise HTTPException(status_code=404, detail="오류 데이터가 없습니다.")
     filename = f"campaign_{campaign_id}_validation_errors.csv"
+    log_action(
+        db,
+        user_id=current_user.id,
+        action="recipients.errors.export",
+        target_type="campaign",
+        target_id=str(campaign_id),
+        commit=True,
+    )
     stream = io.BytesIO(csv_text.encode("utf-8-sig"))
     return StreamingResponse(
         stream,
