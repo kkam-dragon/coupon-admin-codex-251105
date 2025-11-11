@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import csv
 import io
-import re
 from typing import Iterable, List
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.crypto import encrypt_value, hash_value
+from app.core.phone import is_valid_phone
 from app.models.domain import (
     Campaign,
     CampaignRecipient,
@@ -17,7 +17,6 @@ from app.models.domain import (
 )
 from app.schemas.uploads import RecipientUploadSummary
 
-PHONE_PATTERN = re.compile(r"^010\d{8}$")
 MAX_UPLOAD_ROWS = 20_000
 
 
@@ -65,7 +64,7 @@ def handle_recipient_upload(
         if uploaded_total > MAX_UPLOAD_ROWS:
             raise ValueError(f"CSV 1회 업로드는 최대 {MAX_UPLOAD_ROWS:,}건까지 지원합니다.")
 
-        if not PHONE_PATTERN.match(phone):
+        if not is_valid_phone(phone):
             invalid_count += 1
             errors.append(f"{row_number}행: 전화번호 형식이 올바르지 않습니다.")
             error_records.append(

@@ -1,6 +1,4 @@
 from __future__ import annotations
-
-import re
 from datetime import datetime
 from secrets import token_hex
 
@@ -8,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.crypto import encrypt_value, hash_value
+from app.core.phone import normalize_phone
 from app.models.domain import Campaign, CampaignProduct, Client, CouponProduct
 from app.schemas.campaigns import CampaignCreate
 
@@ -39,7 +38,7 @@ def create_campaign(db: Session, payload: CampaignCreate, actor: str | None = No
     if product_ids - existing_ids:
         raise ValueError("������ ��ǰ �� �Ϻΰ� �������� �ʽ��ϴ�.")
 
-    normalized_phone = _normalize_phone(payload.requester_phone)
+    normalized_phone = normalize_phone(payload.requester_phone)
 
     campaign = Campaign(
         campaign_key=_generate_campaign_key(),
@@ -82,10 +81,3 @@ def create_campaign(db: Session, payload: CampaignCreate, actor: str | None = No
     db.commit()
     db.refresh(campaign)
     return campaign
-
-
-def _normalize_phone(phone: str | None) -> str | None:
-    if not phone:
-        return None
-    digits = re.sub(r"\D", "", phone)
-    return digits or None
