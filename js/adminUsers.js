@@ -1,4 +1,26 @@
+const resolveApiBase = () => {
+    const stored = window.API_BASE_URL || localStorage.getItem("apiBaseUrl");
+    if (stored) {
+        return stored.replace(/\/$/, "");
+    }
+    const origin = window.location.origin;
+    if (origin.includes(":5500")) {
+        return "http://localhost:8000";
+    }
+    if (origin.includes(":3000") || origin.includes(":8089")) {
+        return "http://localhost:8089";
+    }
+    return origin.replace(/\/$/, "");
+};
+
 document.addEventListener("DOMContentLoaded", () => {
+    const roles = JSON.parse(localStorage.getItem("userRoles") || "[]");
+    if (!roles.includes("ADMIN")) {
+        alert("관리자만 접근할 수 있는 페이지입니다. 메인 화면으로 이동합니다.");
+        window.location.href = "sendCoupon.html";
+        return;
+    }
+
     const form = document.getElementById("userForm");
     const resultBox = document.getElementById("resultMessage");
     const submitButton = form.querySelector("button[type='submit']");
@@ -146,7 +168,8 @@ document.addEventListener("DOMContentLoaded", () => {
         submitButton.textContent = "등록 중...";
 
         try {
-            const response = await fetch("/users", {
+            const apiBase = resolveApiBase();
+            const response = await fetch(`${apiBase}/users`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
