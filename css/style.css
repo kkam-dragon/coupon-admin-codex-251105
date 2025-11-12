@@ -53,6 +53,21 @@ h2 {
     margin-bottom: 1.5rem !important;
 }
 
+.user-section {
+    border: 1px solid #E5E7EB;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    background-color: #FDFEFE;
+    margin-bottom: 1.5rem;
+}
+
+.user-section h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 0.5rem;
+}
+
 /* Form Styling */
 .form-label {
     font-size: 0.875rem; /* 14px */
