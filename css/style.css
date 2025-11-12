@@ -53,12 +53,26 @@ h2 {
     margin-bottom: 1.5rem !important;
 }
 
-.user-section {
+.user-section1 {
     border: 1px solid #E5E7EB;
     border-radius: 0.75rem;
-    padding: 1.5rem;
+    padding: 1rem; /* 24px -> 16px */
     background-color: #FDFEFE;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem; /* 24px -> 16px */
+    width: 100%;
+    display: block;
+    position: relative; /* 추가: 내용이 section을 벗어나지 않도록 함 */
+}
+
+.user-section2 {
+    border: 1px solid #E5E7EB;
+    border-radius: 0.75rem;
+    padding: 1rem; /* 24px -> 16px */
+    background-color: #FDFEFE;
+    margin-bottom: 1rem; /* 24px -> 16px */
+    width: 100%;
+    display: block;
+    position: relative; /* 추가: 내용이 section을 벗어나지 않도록 함 */
 }
 
 .user-section h3 {

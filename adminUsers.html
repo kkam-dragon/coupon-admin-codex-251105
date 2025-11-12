@@ -9,55 +9,57 @@
     <link href="css/style.css" rel="stylesheet">
 </head>
 <body>
-    <div id="header-placeholder"></div>
+    <div id="header-placeholder"></div>    
 
     <div class="container my-5">
         <h2 class="mb-4">사용자 등록</h2>
         <div class="card">
             <div class="card-title">관리자 전용 사용자 등록</div>
             <form id="userForm">
-                <section class="user-section">
-                    <h3>로그인 계정 설정</h3>
-                    <p class="text-muted mb-3">신규 로그인 계정 정보를 입력하세요.</p>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label for="username" class="form-label">1. 사용할 로그인 ID 입력</label>
-                            <input type="text" class="form-control" id="username" maxlength="50" placeholder="사용할 로그인 ID 입력" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="password" class="form-label">2. 초기 비밀번호 입력</label>
-                            <input type="password" class="form-control" id="password" minlength="8" maxlength="128" placeholder="초기 비밀번호 입력" required>
-                        </div>
-                    </div>
-                </section>
-
-                <section class="user-section mt-4">
-                    <h3>사용자 정보 입력</h3>
-                    <p class="text-muted mb-3">개인정보는 서버에서 암호화되어 저장됩니다.</p>
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <label for="name" class="form-label">1. 이름</label>
-                            <input type="text" class="form-control" id="name" maxlength="100" placeholder="이름">
-                        </div>
-                        <div class="col-md-4">
-                            <label for="email" class="form-label">2. 이메일</label>
-                            <input type="email" class="form-control" id="email" maxlength="254" placeholder="example@company.com">
-                        </div>
-                        <div class="col-md-4">
-                            <label for="phone" class="form-label">3. 휴대폰번호</label>
-                            <input type="text" class="form-control" id="phone" maxlength="30" placeholder="01012345678">
-                        </div>
-                        <div class="col-md-3">
-                            <label for="status" class="form-label">4. 로그인 허용 여부</label>
-                            <select class="form-select" id="status">
-                                <option value="ACTIVE" selected>로그인 허용</option>
-                                <option value="INACTIVE">로그인 비활성</option>
-                            </select>
+                <section class="user-section1">
+                    <h4 class="mb-4">로그인 계정 설정</h4>
+                    <div class="user-grid">
+                        <div class="row g-3">
+                            <div class="col-md-6 mb-3">
+                                <label for="username" class="form-label" style="margin-bottom: 10; height: auto; align-items: initial;">1. 사용할 로그인 ID 입력</label>
+                                <input type="text" class="form-control" id="username" maxlength="50" placeholder="사용할 로그인 ID 입력" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="password" class="form-label" style="margin-bottom: 10; height: auto; align-items: initial;">2. 초기 비밀번호 입력</label>
+                                <input type="password" class="form-control" id="password" minlength="8" maxlength="128" placeholder="초기 비밀번호 입력" required>
+                            </div>
                         </div>
                     </div>
                 </section>
 
-                <div class="d-flex gap-3 mt-4">
+                <section class="user-section2 mt-3">
+                    <h4 class="mb-4">사용자 정보 입력</h4>
+                    <div class="user-grid">
+                        <div class="row g-3">
+                            <div class="col-md-3 mb-3">
+                                <label for="name" class="form-label" style="margin-bottom: 10; height: auto; align-items: initial;">1. 이름</label>
+                                <input type="text" class="form-control" id="name" maxlength="100" placeholder="이름">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="email" class="form-label" style="margin-bottom: 10; height: auto; align-items: initial;">2. 이메일</label>
+                                <input type="email" class="form-control" id="email" maxlength="254" placeholder="example@company.com">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="phone" class="form-label" style="margin-bottom: 10; height: auto; align-items: initial;">3. 휴대폰번호</label>
+                                <input type="text" class="form-control" id="phone" maxlength="30" placeholder="01012345678">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="status" class="form-label" style="margin-bottom: 10; height: auto; align-items: initial;">4. 로그인 허용 여부</label>
+                                <select class="form-select" id="status">
+                                    <option value="ACTIVE" selected>로그인 허용</option>
+                                    <option value="INACTIVE">로그인 비활성</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="d-flex gap-3 mt-4 justify-content-center">
                     <button type="submit" class="btn btn-primary px-4">사용자 등록</button>
                     <button type="reset" class="btn btn-outline-secondary">초기화</button>
                 </div>
