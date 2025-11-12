@@ -14,6 +14,7 @@ except ModuleNotFoundError:  # pragma: no cover - optional dependency guard
 from app.core.config import settings
 from app.tasks.coupon_status_sync import run_coupon_status_sync_job
 from app.tasks.product_sync import run_product_sync_job
+from app.tasks.send_query_export_cleanup import run_send_query_export_cleanup_job
 from app.tasks.snap_result_sync import run_snap_result_sync_job
 
 logger = logging.getLogger(__name__)
@@ -52,6 +53,15 @@ def start_scheduler() -> None:
             run_coupon_status_sync_job,
             IntervalTrigger(seconds=settings.coupon_status_sync_interval_seconds),
             id="coupon_status_sync",
+            max_instances=1,
+            replace_existing=True,
+            coalesce=True,
+        )
+    if settings.export_cleanup_enabled:
+        _scheduler.add_job(
+            run_send_query_export_cleanup_job,
+            IntervalTrigger(minutes=settings.export_cleanup_interval_minutes),
+            id="send_query_export_cleanup",
             max_instances=1,
             replace_existing=True,
             coalesce=True,

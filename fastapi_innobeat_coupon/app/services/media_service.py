@@ -9,6 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.domain import MediaAsset
+from app.services import virus_scan_service
 
 UPLOAD_DIR = Path("uploads/banners")
 
@@ -24,6 +25,8 @@ async def save_banner_asset(
         raise ValueError("업로드된 파일이 비어 있습니다.")
     if file.content_type and not file.content_type.startswith("image/"):
         raise ValueError("이미지 파일만 업로드할 수 있습니다.")
+
+    virus_scan_service.scan_bytes(contents, file.filename or "banner.bin")
 
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     filename = _build_filename(file.filename or "banner.bin")

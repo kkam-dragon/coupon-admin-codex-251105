@@ -36,6 +36,21 @@ class Settings(BaseSettings):
         default=200,
         alias="COUPON_STATUS_SYNC_BATCH_SIZE",
     )
+    virus_scan_enabled: bool = Field(default=False, alias="VIRUS_SCAN_ENABLED")
+    virus_scan_command: str | None = Field(default=None, alias="VIRUS_SCAN_COMMAND")
+    send_query_export_dir: str = Field(
+        default="temp/exports/send_query",
+        alias="SEND_QUERY_EXPORT_DIR",
+    )
+    send_query_export_ttl_hours: int = Field(
+        default=24,
+        alias="SEND_QUERY_EXPORT_TTL_HOURS",
+    )
+    export_cleanup_enabled: bool = Field(default=True, alias="EXPORT_CLEANUP_ENABLED")
+    export_cleanup_interval_minutes: int = Field(
+        default=60,
+        alias="EXPORT_CLEANUP_INTERVAL_MINUTES",
+    )
     coufun_base_url: str | None = Field(default=None, alias="COUFUN_BASE_URL")
     coufun_poc_id: str | None = Field(default=None, alias="COUFUN_POC_ID")
     coufun_timeout: float = Field(default=10.0, alias="COUFUN_TIMEOUT")

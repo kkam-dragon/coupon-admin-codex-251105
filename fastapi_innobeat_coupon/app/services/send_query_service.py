@@ -9,6 +9,7 @@ from typing import Iterable
 from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.crypto import decrypt_value
 from app.core.phone import mask_phone
 from app.models.domain import (
@@ -26,7 +27,7 @@ from app.schemas.send_query import (
     CampaignSummary,
     RecipientBrief,
 )
-EXPORT_DIR = Path("temp/exports/send_query")
+EXPORT_DIR = Path(settings.send_query_export_dir)
 
 
 def list_campaigns(db: Session, filters: CampaignQueryFilters) -> CampaignQueryResponse:
@@ -158,7 +159,7 @@ def export_campaigns_to_csv(
     requested_by: int | None,
 ) -> Path:
     EXPORT_DIR.mkdir(parents=True, exist_ok=True)
-    _cleanup_old_exports()
+    cleanup_old_exports()
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
     filename = f"send_query_{timestamp}.csv"
     export_path = EXPORT_DIR / filename
@@ -309,8 +310,9 @@ def _estimate_valid_until(campaign: Campaign, snapshot: dict[str, object]) -> da
     return campaign.scheduled_at + timedelta(days=days)
 
 
-def _cleanup_old_exports(ttl_hours: int = 24) -> None:
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=ttl_hours)
+def cleanup_old_exports(ttl_hours: int | None = None) -> None:
+    ttl = ttl_hours or settings.send_query_export_ttl_hours
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=ttl)
     if not EXPORT_DIR.exists():
         return
     for path in EXPORT_DIR.glob("send_query_*.csv"):
