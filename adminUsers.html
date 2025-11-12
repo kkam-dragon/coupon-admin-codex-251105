@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사용자 등록</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+    <div id="header-placeholder"></div>
+
+    <div class="container my-5">
+        <h2 class="mb-4">사용자 등록</h2>
+        <div class="card">
+            <div class="card-title">관리자 전용 사용자 등록</div>
+            <p class="text-muted">입력 값은 `users` 테이블의 컬럼과 1:1로 매핑됩니다. 비밀번호는 서버에서 자동으로 해시되며, 이름/이메일/전화번호는 암호화되어 저장됩니다.</p>
+            <form id="userForm" class="row g-3">
+                <div class="col-md-6">
+                    <label for="username" class="form-label">username</label>
+                    <input type="text" class="form-control" id="username" maxlength="50" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="password" class="form-label">password_hash (비밀번호)</label>
+                    <input type="password" class="form-control" id="password" minlength="8" maxlength="128" required>
+                </div>
+                <div class="col-md-4">
+                    <label for="name" class="form-label">enc_name</label>
+                    <input type="text" class="form-control" id="name" maxlength="100" placeholder="이름">
+                </div>
+                <div class="col-md-4">
+                    <label for="email" class="form-label">enc_email</label>
+                    <input type="email" class="form-control" id="email" maxlength="254" placeholder="admin@example.com">
+                </div>
+                <div class="col-md-4">
+                    <label for="phone" class="form-label">enc_phone</label>
+                    <input type="text" class="form-control" id="phone" maxlength="30" placeholder="01012345678">
+                </div>
+                <div class="col-md-3">
+                    <label for="status" class="form-label">status</label>
+                    <select class="form-select" id="status">
+                        <option value="ACTIVE" selected>ACTIVE</option>
+                        <option value="INACTIVE">INACTIVE</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label for="token" class="form-label">Access Token (선택)</label>
+                    <input type="text" class="form-control" id="token" placeholder="Bearer 토큰을 입력하면 즉시 API 호출을 테스트할 수 있습니다.">
+                    <div class="form-text">토큰이 비어 있으면 브라우저 localStorage의 `accessToken` 값을 사용하려 시도합니다.</div>
+                </div>
+                <div class="col-12 d-flex gap-3 mt-3">
+                    <button type="submit" class="btn btn-primary px-4">사용자 등록</button>
+                    <button type="reset" class="btn btn-outline-secondary">초기화</button>
+                </div>
+            </form>
+            <div id="resultMessage" class="alert mt-4 d-none" role="alert"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/adminUsers.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.body.classList.add('loaded');
+            fetch('partials/header.html')
+                .then(res => res.text())
+                .then(html => {
+                    document.getElementById('header-placeholder').innerHTML = html;
+                    const logoutBtn = document.getElementById('logoutBtn');
+                    if (logoutBtn) {
+                        logoutBtn.addEventListener('click', () => { window.location.href = 'index.html'; });
+                    }
+                    const nav = document.getElementById('nav-adminUsers');
+                    if (nav) nav.classList.add('active');
+                });
+        });
+    </script>
+</body>
+</html>

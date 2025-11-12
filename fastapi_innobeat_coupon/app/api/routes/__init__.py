@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from . import auth, campaigns, coupons, cs, health, media, products, send_query, uploads
+from . import auth, campaigns, coupons, cs, health, media, products, send_query, uploads, users
 
 api_router = APIRouter()
 api_router.include_router(health.router)
@@ -12,3 +12,4 @@ api_router.include_router(send_query.router)
 api_router.include_router(uploads.router)
 api_router.include_router(coupons.router)
 api_router.include_router(cs.router)
+api_router.include_router(users.router)
