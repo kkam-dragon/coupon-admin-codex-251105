@@ -21,11 +21,9 @@ document.addEventListener("DOMContentLoaded", () => {
             status: document.getElementById("status").value,
         };
 
-        const manualToken = document.getElementById("token").value.trim();
-        const storedToken = window.localStorage?.getItem("accessToken") || "";
-        const token = manualToken || storedToken;
+        const token = window.localStorage?.getItem("accessToken") || "";
         if (!token) {
-            showMessage("Access Token이 필요합니다. 로그인 후 토큰을 입력하세요.", "warning");
+            showMessage("로그인 정보가 만료되었습니다. 다시 로그인해 주세요.", "warning");
             return;
         }
 
