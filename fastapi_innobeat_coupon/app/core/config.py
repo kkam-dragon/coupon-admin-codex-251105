@@ -25,6 +25,17 @@ class Settings(BaseSettings):
     snap_sync_enabled: bool = Field(default=True, alias="SNAP_SYNC_ENABLED")
     snap_sync_interval_seconds: int = Field(default=180, alias="SNAP_SYNC_INTERVAL_SECONDS")
     snap_sync_lookback_minutes: int = Field(default=60, alias="SNAP_SYNC_LOOKBACK_MINUTES")
+    product_sync_enabled: bool = Field(default=True, alias="PRODUCT_SYNC_ENABLED")
+    product_sync_hour_utc: int = Field(default=19, alias="PRODUCT_SYNC_HOUR_UTC")
+    coupon_status_sync_enabled: bool = Field(default=True, alias="COUPON_STATUS_SYNC_ENABLED")
+    coupon_status_sync_interval_seconds: int = Field(
+        default=300,
+        alias="COUPON_STATUS_SYNC_INTERVAL_SECONDS",
+    )
+    coupon_status_sync_batch_size: int = Field(
+        default=200,
+        alias="COUPON_STATUS_SYNC_BATCH_SIZE",
+    )
     coufun_base_url: str | None = Field(default=None, alias="COUFUN_BASE_URL")
     coufun_poc_id: str | None = Field(default=None, alias="COUFUN_POC_ID")
     coufun_timeout: float = Field(default=10.0, alias="COUFUN_TIMEOUT")

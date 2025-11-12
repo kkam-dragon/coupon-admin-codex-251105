@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from pathlib import Path
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -9,8 +10,11 @@ from app.core.crypto import decrypt_value, encrypt_value, hash_value
 from app.core.phone import is_valid_phone, mask_phone, normalize_phone
 from app.models.domain import (
     Campaign,
+    CampaignProduct,
     CampaignRecipient,
     CouponIssue,
+    CouponProduct,
+    CouponStatusHistory,
     CsAction,
     MediaAsset,
     MmsJob,
@@ -18,7 +22,9 @@ from app.models.domain import (
     RenderedMmsAsset,
 )
 from app.schemas.cs import CsActionResponse, CsResendResponse, CsSearchResponse
-from app.services import snap_service
+from app.services import coufun_service, snap_service
+
+RENDER_DIR = Path("temp/rendered_mms")
 
 
 def search_coupon_issue(
@@ -80,38 +86,44 @@ def resend_coupon(
     timestamp = datetime.now(timezone.utc).strftime("%H%M%S")
     client_key_seed = f"{campaign.campaign_key}-CS{timestamp}"
     client_key = snap_service.build_client_key(client_key_seed, recipient.id)
-    media_path = _resolve_media_path(db, campaign.id, recipient.id, campaign.banner_asset_id)
 
-    snap_service.enqueue_mms_message(
-        db,
-        client_key=client_key,
-        phone=phone,
-        callback_number=campaign.sender_number,
-        title=campaign.message_title,
-        message=campaign.message_body,
-        media_path=media_path,
-    )
+    try:
+        _ensure_coupon_before_resend(db, issue, campaign, client_key)
+        media_path = _resolve_media_path(db, campaign, recipient, campaign.banner_asset_id, client_key)
 
-    job = MmsJob(
-        campaign_id=campaign.id,
-        recipient_id=recipient.id,
-        client_key=client_key,
-        ums_msg_id=client_key,
-        req_date=datetime.now(timezone.utc),
-        status="READY",
-    )
-    db.add(job)
+        snap_service.enqueue_mms_message(
+            db,
+            client_key=client_key,
+            phone=phone,
+            callback_number=campaign.sender_number,
+            title=campaign.message_title,
+            message=campaign.message_body,
+            media_path=media_path,
+        )
 
-    action = _create_cs_action(
-        db,
-        coupon_issue_id=issue.id,
-        recipient_id=recipient.id,
-        action_type="RESEND",
-        result_status="QUEUED",
-        reason=reason,
-        performed_by=performed_by,
-    )
-    db.commit()
+        job = MmsJob(
+            campaign_id=campaign.id,
+            recipient_id=recipient.id,
+            client_key=client_key,
+            ums_msg_id=client_key,
+            req_date=datetime.now(timezone.utc),
+            status="READY",
+        )
+        db.add(job)
+
+        action = _create_cs_action(
+            db,
+            coupon_issue_id=issue.id,
+            recipient_id=recipient.id,
+            action_type="RESEND",
+            result_status="QUEUED",
+            reason=reason,
+            performed_by=performed_by,
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
     return CsResendResponse(client_key=client_key, queued=True)
 
 
@@ -157,16 +169,27 @@ def change_recipient_phone(
     )
     db.add(history)
 
-    action = _create_cs_action(
-        db,
-        coupon_issue_id=issue.id,
-        recipient_id=recipient.id,
-        action_type="CHANGE_PHONE",
-        result_status="UPDATED",
-        reason=reason,
-        performed_by=performed_by,
-    )
-    db.commit()
+    try:
+        _replace_coupon_after_phone_change(
+            db,
+            issue=issue,
+            campaign=campaign,
+            performed_by=performed_by,
+            reason=reason,
+        )
+        action = _create_cs_action(
+            db,
+            coupon_issue_id=issue.id,
+            recipient_id=recipient.id,
+            action_type="CHANGE_PHONE",
+            result_status="UPDATED",
+            reason=reason,
+            performed_by=performed_by,
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
     return CsActionResponse(action_id=action.id, action_type=action.action_type)
 
 
@@ -235,23 +258,24 @@ def _load_issue_bundle(db: Session, coupon_issue_id: int) -> tuple[CouponIssue, 
 
 def _resolve_media_path(
     db: Session,
-    campaign_id: int,
-    recipient_id: int,
+    campaign: Campaign,
+    recipient: CampaignRecipient,
     banner_asset_id: int | None,
+    client_key: str,
 ) -> str | None:
     rendered = db.scalars(
         select(RenderedMmsAsset).where(
-            RenderedMmsAsset.campaign_id == campaign_id,
-            RenderedMmsAsset.recipient_id == recipient_id,
+            RenderedMmsAsset.campaign_id == campaign.id,
+            RenderedMmsAsset.recipient_id == recipient.id,
         )
     ).first()
-    if rendered and rendered.file_path:
+    if rendered and rendered.file_path and Path(rendered.file_path).exists():
         return rendered.file_path
     if banner_asset_id:
         media = db.get(MediaAsset, banner_asset_id)
         if media:
             return media.storage_path
-    return None
+    return _render_message_asset(db, campaign, recipient, rendered, client_key)
 
 
 def _mask_barcode(barcode: str | None) -> str | None:
@@ -260,3 +284,119 @@ def _mask_barcode(barcode: str | None) -> str | None:
     if len(barcode) <= 4:
         return "****"
     return f"****{barcode[-4:]}"
+
+
+def _ensure_coupon_before_resend(
+    db: Session,
+    issue: CouponIssue,
+    campaign: Campaign,
+    client_key: str,
+) -> None:
+    goods_id = _resolve_goods_id(db, campaign.id)
+    if not goods_id:
+        raise ValueError("캠페인에 연결된 COUFUN 상품을 찾을 수 없습니다.")
+    barcode = decrypt_value(issue.barcode_enc)
+    if not barcode:
+        _reissue_coupon(db, issue, campaign, goods_id, client_key, memo="reissue_missing_barcode")
+        return
+    status = coufun_service.get_coupon_status(goods_id, barcode)
+    issue.status = status.status
+    _record_coupon_history(db, issue.id, status.status, f"COUFUN status={status.status}")
+    if status.status in {"USED", "CANCELLED", "EXPIRED", "ISSUE_FAILED"}:
+        _reissue_coupon(db, issue, campaign, goods_id, client_key, memo="reissue_after_status")
+
+
+def _replace_coupon_after_phone_change(
+    db: Session,
+    *,
+    issue: CouponIssue,
+    campaign: Campaign,
+    performed_by: int,
+    reason: str | None,
+) -> None:
+    goods_id = _resolve_goods_id(db, campaign.id)
+    if not goods_id:
+        raise ValueError("캠페인에 연결된 COUFUN 상품을 찾을 수 없습니다.")
+    barcode = decrypt_value(issue.barcode_enc)
+    if barcode:
+        cancel_status = coufun_service.cancel_coupon(goods_id, barcode, reason)
+        issue.status = cancel_status.status
+        _record_coupon_history(
+            db,
+            issue.id,
+            cancel_status.status,
+            f"cancel via CS (user={performed_by})",
+        )
+    timestamp = datetime.now(timezone.utc).strftime("%H%M%S")
+    client_key = f"{campaign.campaign_key}-PH{timestamp}"
+    _reissue_coupon(db, issue, campaign, goods_id, client_key, memo="reissue_after_phone_change")
+
+
+def _reissue_coupon(
+    db: Session,
+    issue: CouponIssue,
+    campaign: Campaign,
+    goods_id: str,
+    client_key: str,
+    memo: str,
+) -> None:
+    result = coufun_service.issue_coupon(goods_id=goods_id, tr_id=client_key, create_count=1)
+    issue.order_id = result.order_id
+    issue.barcode_enc = encrypt_value(result.barcode)
+    issue.valid_end_date = result.valid_end_date
+    issue.vendor_payload = result.raw_payload
+    issue.status = "ISSUED"
+    issue.issued_at = datetime.now(timezone.utc)
+    _record_coupon_history(db, issue.id, "ISSUED", memo)
+
+
+def _record_coupon_history(db: Session, issue_id: int, status: str, memo: str | None) -> None:
+    history = CouponStatusHistory(
+        coupon_issue_id=issue_id,
+        status=status,
+        status_source="CS",
+        status_at=datetime.now(timezone.utc),
+        memo=memo,
+    )
+    db.add(history)
+
+
+def _resolve_goods_id(db: Session, campaign_id: int) -> str | None:
+    return db.scalar(
+        select(CouponProduct.goods_id)
+        .join(CampaignProduct, CampaignProduct.coupon_product_id == CouponProduct.id)
+        .where(CampaignProduct.campaign_id == campaign_id)
+    )
+
+
+def _render_message_asset(
+    db: Session,
+    campaign: Campaign,
+    recipient: CampaignRecipient,
+    existing_asset: RenderedMmsAsset | None,
+    client_key: str,
+) -> str:
+    RENDER_DIR.mkdir(parents=True, exist_ok=True)
+    filename = f"{client_key}.txt"
+    path = RENDER_DIR / filename
+    content = (
+        f"[{campaign.event_name}]\n"
+        f"Title: {campaign.message_title}\n"
+        f"Message:\n{campaign.message_body}\n"
+    )
+    path.write_text(content, encoding="utf-8")
+    if existing_asset:
+        existing_asset.file_path = str(path)
+        asset = existing_asset
+    else:
+        asset = RenderedMmsAsset(
+            campaign_id=campaign.id,
+            recipient_id=recipient.id,
+            template_id=None,
+            asset_id=None,
+            file_path=str(path),
+            file_hash=None,
+        )
+        db.add(asset)
+        db.flush()
+    return str(path)

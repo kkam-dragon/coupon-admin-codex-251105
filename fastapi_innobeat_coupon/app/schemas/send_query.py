@@ -20,12 +20,15 @@ class CampaignSummary(BaseModel):
     client_name: str | None
     event_name: str
     scheduled_at: datetime | None
+    dispatch_at: datetime | None
+    valid_until: datetime | None
     status: str
     total_recipients: int
     validated_count: int
     sent_count: int
     product_names: list[str]
-    estimated_amount: Decimal
+    unit_price: Decimal | None
+    total_amount: Decimal
     cursor: int
 
 
