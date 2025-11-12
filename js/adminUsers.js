@@ -9,17 +9,132 @@ document.addEventListener("DOMContentLoaded", () => {
         resultBox.classList.remove("d-none");
     };
 
+    const inputFilters = {
+        username: {
+            pattern: /[^A-Za-z0-9]/g,
+            maxLength: 15,
+            message: "로그인 ID는 영문/숫자 조합 15자 이내여야 합니다.",
+        },
+        password: {
+            pattern: /[^A-Za-z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?`~]/g,
+            maxLength: 15,
+            message: "비밀번호는 영문/숫자/특수문자 조합 15자 이내여야 합니다.",
+        },
+        name: {
+            pattern: /[^A-Za-z가-힣]/g,
+            maxLength: 15,
+            message: "이름은 한글 또는 영문 15자 이내로 입력하세요.",
+        },
+        email: {
+            pattern: /[^A-Za-z0-9@._-]/g,
+            message: "이메일은 영문/숫자/@/./_/ -만 입력할 수 있습니다.",
+        },
+        phone: {
+            pattern: /[^0-9]/g,
+            message: "휴대폰 번호는 숫자만 입력할 수 있습니다.",
+        },
+    };
+
+    const validators = {
+        username: (value) => /^[A-Za-z0-9]{1,15}$/.test(value),
+        password: (value) => /^[A-Za-z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?`~]{8,15}$/.test(value),
+        name: (value) => !value || /^[A-Za-z가-힣]{1,15}$/.test(value),
+        email: (value) => !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
+        phone: (value) => !value || /^\d+$/.test(value),
+    };
+
+    const validate = (payload) => {
+        if (!validators.username(payload.username)) {
+            showMessage("로그인 ID는 영문/숫자 조합 15자 이내여야 합니다.", "warning");
+            return false;
+        }
+        if (!validators.password(payload.password)) {
+            showMessage("비밀번호는 영문/숫자/특수문자 구성 8~15자여야 합니다.", "warning");
+            return false;
+        }
+        if (!validators.name(payload.name)) {
+            showMessage("이름은 한글 또는 영문 15자 이내로 입력하세요.", "warning");
+            return false;
+        }
+        if (!validators.email(payload.email)) {
+            showMessage("올바른 이메일 형식이 아닙니다.", "warning");
+            return false;
+        }
+        if (!validators.phone(payload.phone)) {
+            showMessage("휴대폰 번호는 숫자만 입력할 수 있습니다.", "warning");
+            return false;
+        }
+        return true;
+    };
+
+    const applyInputFilter = (fieldId, rule) => {
+        const input = document.getElementById(fieldId);
+        if (!input || !rule) {
+            return;
+        }
+        let isComposing = false;
+        const sanitize = () => {
+            let value = input.value;
+            const original = value;
+            if (rule.pattern) {
+                value = value.replace(rule.pattern, "");
+            }
+            if (rule.maxLength) {
+                value = value.slice(0, rule.maxLength);
+            }
+            if (value !== original) {
+                input.value = value;
+                showMessage(rule.message, "warning");
+            }
+        };
+
+        input.addEventListener("compositionstart", () => {
+            isComposing = true;
+        });
+        input.addEventListener("compositionend", () => {
+            isComposing = false;
+            sanitize();
+        });
+        input.addEventListener("input", () => {
+            if (isComposing) {
+                return;
+            }
+            sanitize();
+        });
+    };
+
+    Object.keys(inputFilters).forEach((key) => applyInputFilter(key, inputFilters[key]));
+
+    const togglePasswordBtn = document.getElementById("togglePassword");
+    const passwordInput = document.getElementById("password");
+    if (togglePasswordBtn && passwordInput) {
+        togglePasswordBtn.addEventListener("click", () => {
+            const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
+            passwordInput.setAttribute("type", type);
+            togglePasswordBtn.querySelector("i")?.classList.toggle("fa-eye");
+            togglePasswordBtn.querySelector("i")?.classList.toggle("fa-eye-slash");
+        });
+    }
+
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
 
         const payload = {
             username: document.getElementById("username").value.trim(),
             password: document.getElementById("password").value,
-            name: document.getElementById("name").value.trim() || null,
-            email: document.getElementById("email").value.trim() || null,
-            phone: document.getElementById("phone").value.trim() || null,
+            name: document.getElementById("name").value.trim(),
+            email: document.getElementById("email").value.trim(),
+            phone: document.getElementById("phone").value.trim(),
             status: document.getElementById("status").value,
         };
+
+        if (!validate(payload)) {
+            return;
+        }
+
+        payload.name = payload.name || null;
+        payload.email = payload.email || null;
+        payload.phone = payload.phone || null;
 
         const token = window.localStorage?.getItem("accessToken") || "";
         if (!token) {

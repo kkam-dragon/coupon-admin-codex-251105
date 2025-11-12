@@ -270,6 +270,9 @@ th[data-sortable]:hover {
 }
 
 /* 조회 테이블 컬럼별 너비 고정 */
+#resultMessage {
+    margin-top: 1.5rem;
+}
 /* 테이블 행 높이 조정을 위한 스타일 */
 .table th, .table td {
     padding-top: 0.5rem; /* 기본값 0.5rem에서 조정 */
