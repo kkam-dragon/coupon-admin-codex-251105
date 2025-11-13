@@ -3,14 +3,7 @@ const resolveApiBase = () => {
     if (stored) {
         return stored.replace(/\/$/, "");
     }
-    const origin = window.location.origin;
-    if (origin.includes(":5500")) {
-        return "http://localhost:8000";
-    }
-    if (origin.includes(":3000") || origin.includes(":8089")) {
-        return "http://localhost:8089";
-    }
-    return origin.replace(/\/$/, "");
+    return "http://localhost:8089";
 };
 
 document.addEventListener("DOMContentLoaded", () => {

@@ -63,14 +63,20 @@ class Settings(BaseSettings):
     )
 
     model_config = SettingsConfigDict(
-        env_file=(".env", ),
-        env_file_encoding="utf-8",
+        # env_file=(".env", ),
+        # env_file_encoding="utf-8",
         extra="ignore",
     )
 
     @property
     def encryption_key_bytes(self) -> bytes:
         return bytes.fromhex(self.encryption_key)
+
+    def sqlalchemy_database_url(self) -> str:
+        return (
+            f"mysql+pymysql://{self.db_user}:{self.db_password}"
+            f"@{self.db_host}:{self.db_port}/{self.db_name}?charset=utf8mb4"
+        )
 
 
 settings = Settings()
